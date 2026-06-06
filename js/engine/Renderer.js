@@ -57,35 +57,8 @@ export default class Renderer {
     }
 
     drawTargetDummy() {
-        if (!this.showTarget) return;
-
-        const { context } = this;
-        const cx = this.canvas.width / 2;
-        const cy = this.canvas.height / 2;
-
-        context.save();
-        context.globalAlpha = 0.78;
-        context.fillStyle = '#2b3340';
-        context.fillRect(cx - 8, cy - 18, 16, 18);
-        context.fillRect(cx - 12, cy - 7, 24, 10);
-        context.fillRect(cx - 6, cy + 3, 5, 10);
-        context.fillRect(cx + 1, cy + 3, 5, 10);
-        context.fillStyle = '#6f7f95';
-        context.fillRect(cx - 5, cy - 13, 3, 3);
-        context.fillRect(cx + 2, cy - 13, 3, 3);
-        context.restore();
     }
 
     drawViewportGuides() {
-        const { context } = this;
-        const cx = this.canvas.width / 2;
-        const cy = this.canvas.height / 2;
-
-        context.save();
-        context.globalAlpha = 0.15;
-        context.fillStyle = '#32d7ff';
-        context.fillRect(cx - 1, 0, 1, this.canvas.height);
-        context.fillRect(0, cy - 1, this.canvas.width, 1);
-        context.restore();
     }
 }
