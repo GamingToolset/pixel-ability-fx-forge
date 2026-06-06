@@ -258,9 +258,15 @@ p {
     background-position: 0 0, 12px 12px;
     background-size: 24px 24px;
     border: 1px solid #4b5564;
+    border-bottom-width: 1px;
     border-radius: 18px;
     box-shadow: var(--shadow), 0 0 0 8px rgb(255 255 255 / 0.03);
     padding: 18px;
+    transition: border-bottom-color 140ms ease, border-bottom-width 140ms ease;
+}
+
+.canvas-frame:hover {
+    border-bottom: 2px solid var(--accent);
 }
 
 canvas {
