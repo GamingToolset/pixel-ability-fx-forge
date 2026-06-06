@@ -26,7 +26,7 @@
                 <h2>Hierarchy</h2>
                 <ul class="hierarchy-list" aria-label="Scene hierarchy">
                     <li class="active"><span class="status-dot"></span> Pixel Emitter</li>
-                    <li>Canvas Camera · 160×160</li>
+                    <li id="hierarchyResolution">Canvas Camera · 160×160</li>
                     <li>Checkerboard Preview</li>
                 </ul>
             </section>
@@ -37,17 +37,34 @@
                     <input id="showTarget" type="checkbox" checked>
                     <span>Show target dummy</span>
                 </label>
+                <label class="field-label" for="canvasSizeSelect">Canvas Size</label>
+                <select id="canvasSizeSelect" class="control-select">
+                    <option value="64">64×64</option>
+                    <option value="128">128×128</option>
+                    <option value="160" selected>160×160</option>
+                    <option value="256">256×256</option>
+                    <option value="512">512×512</option>
+                </select>
                 <label class="checkbox-row" for="autoPlay">
                     <input id="autoPlay" type="checkbox" checked>
                     <span>Continuous emission</span>
                 </label>
+                <button id="randomizeBtn" class="button warm">Randomize</button>
                 <button id="resetBtn" class="button ghost">Reset Simulation</button>
             </section>
 
             <section class="tool-card export-card">
                 <h2>Export</h2>
-                <p>Exports the internal transparent 160×160 canvas. The checkerboard is preview-only.</p>
+                <p id="exportHelp">Exports the internal transparent 160×160 canvas. The checkerboard is preview-only.</p>
                 <button id="downloadBtn" class="button success">Export PNG</button>
+            </section>
+
+            <section class="tool-card capture-card">
+                <h2>Capture</h2>
+                <label class="field-label" for="frameCountInput">Frame Count</label>
+                <input id="frameCountInput" class="number-input" type="number" min="2" max="32" step="1" value="8">
+                <button id="recordFramesBtn" class="button primary">Record 8 Frames</button>
+                <button id="exportAtlasBtn" class="button success">Export Atlas</button>
             </section>
         </aside>
 
@@ -59,9 +76,13 @@
             <div class="canvas-frame">
                 <canvas id="fxCanvas" width="160" height="160" aria-label="Pixel particle effect canvas"></canvas>
             </div>
+            <div class="atlas-preview-shell" aria-label="Latest atlas export preview">
+                <span>Atlas Preview</span>
+                <div id="atlasPreview" class="atlas-preview empty">Export an atlas to preview frames here.</div>
+            </div>
             <div class="viewport-footer">
-                <span>Internal: 160×160</span>
-                <span>CSS Scale: 3× · image-rendering: pixelated</span>
+                <span id="internalResolution">Internal: 160×160</span>
+                <span id="cssScaleLabel">CSS Scale: 3× · image-rendering: pixelated</span>
             </div>
         </main>
 
@@ -187,6 +208,7 @@
         </aside>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -117,6 +117,7 @@ p {
 
 .control-select,
 .text-input,
+.number-input,
 .control-row input[type="number"] {
     width: 100%;
     background: #0e1013;
@@ -130,6 +131,7 @@ p {
 
 .control-select:focus,
 .text-input:focus,
+.number-input:focus,
 .control-row input[type="number"]:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgb(50 215 255 / 0.12);
@@ -170,6 +172,12 @@ p {
     background: linear-gradient(180deg, var(--success), #1ca967);
     border-color: transparent;
     color: #04130c;
+}
+
+.button.warm {
+    background: linear-gradient(180deg, var(--accent-warm), #d98620);
+    border-color: transparent;
+    color: #1a0f00;
 }
 
 .button.ghost { background: transparent; }
@@ -224,7 +232,7 @@ p {
         radial-gradient(circle at center, #171b21, #090a0c 74%);
     background-size: 32px 32px, 32px 32px, auto;
     display: grid;
-    grid-template-rows: 56px 1fr 44px;
+    grid-template-rows: 56px 1fr auto 44px;
     justify-items: center;
     min-width: 0;
     position: relative;
@@ -261,6 +269,43 @@ canvas {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     width: 480px;
+}
+
+.atlas-preview-shell {
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    max-width: 560px;
+    padding: 0 0 12px;
+    text-transform: uppercase;
+    width: min(82%, 560px);
+}
+
+.atlas-preview {
+    align-items: center;
+    background: #0e1013;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-muted);
+    display: flex;
+    margin-top: 8px;
+    max-height: 80px;
+    min-height: 54px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px;
+    text-transform: none;
+}
+
+.atlas-preview.empty {
+    justify-content: center;
+}
+
+.atlas-preview img {
+    display: block;
+    flex: 0 0 auto;
+    image-rendering: pixelated;
+    max-height: 64px;
 }
 
 .accordion-stack {
