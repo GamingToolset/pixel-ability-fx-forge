@@ -12,7 +12,8 @@ export const presets = {
             palette: ['#ffffff', '#ffe66d', '#ff9f1c', '#ff4d00'],
             startSize: 7,
             endSize: 1,
-            life: 1.15
+            life: 1.15,
+            particleShape: 'circle'
         }
     },
     frostNova: {
@@ -28,7 +29,8 @@ export const presets = {
             palette: ['#ffffff', '#b8f7ff', '#79d7ff', '#72a4ff'],
             startSize: 5,
             endSize: 1,
-            life: 1.8
+            life: 1.8,
+            particleShape: 'diamond'
         }
     },
     voidImplosion: {
@@ -44,7 +46,8 @@ export const presets = {
             palette: ['#e7d7ff', '#8f5cff', '#4d1d95', '#130024'],
             startSize: 6,
             endSize: 0,
-            life: 2.25
+            life: 2.25,
+            particleShape: 'square'
         }
     },
     acidPool: {
@@ -60,7 +63,8 @@ export const presets = {
             palette: ['#eaff4f', '#a6ff00', '#39ff14', '#18a84b'],
             startSize: 4,
             endSize: 1,
-            life: 1.55
+            life: 1.55,
+            particleShape: 'circle'
         }
     },
     magicAura: {
@@ -76,7 +80,8 @@ export const presets = {
             palette: ['#9bf6ff', '#bdb2ff', '#ffc6ff', '#fdffb6'],
             startSize: 4,
             endSize: 1,
-            life: 2.8
+            life: 2.8,
+            particleShape: 'star'
         }
     },
     lightningStrike: {
@@ -92,7 +97,8 @@ export const presets = {
             palette: ['#ffffff', '#dff8ff', '#7de7ff', '#8a6cff', '#b200ff'],
             startSize: 3,
             endSize: 0,
-            life: 0.35
+            life: 0.35,
+            particleShape: 'cross'
         }
     },
     healBurst: {
@@ -108,7 +114,8 @@ export const presets = {
             palette: ['#ffffff', '#d9ffe5', '#9cffb4', '#58e879', '#2aad54'],
             startSize: 5,
             endSize: 1,
-            life: 3.2
+            life: 3.2,
+            particleShape: 'plus'
         }
     },
     bloodSplatter: {
@@ -124,7 +131,8 @@ export const presets = {
             palette: ['#ff4242', '#c71522', '#8f0712', '#4c0008'],
             startSize: 4,
             endSize: 1,
-            life: 0.95
+            life: 0.95,
+            particleShape: 'pixel-cluster'
         }
     },
     smokePuff: {
@@ -140,7 +148,8 @@ export const presets = {
             palette: ['#ffffff', '#dfe3e6', '#aeb5bd', '#737981', '#f5f5f5'],
             startSize: 14,
             endSize: 0,
-            life: 2.4
+            life: 2.4,
+            particleShape: 'circle'
         }
     },
     confettiExplosion: {
@@ -156,7 +165,8 @@ export const presets = {
             palette: ['#ff3b5f', '#ff9f1c', '#ffe66d', '#39d98a', '#32d7ff', '#7b61ff', '#ff70d9'],
             startSize: 3,
             endSize: 1,
-            life: 1.9
+            life: 1.9,
+            particleShape: 'diamond'
         }
     },
     soulAscend: {
@@ -172,7 +182,8 @@ export const presets = {
             palette: ['#ffffff', '#eaf8ff', '#c8eeff', '#9fdcff', '#b7c8ff'],
             startSize: 5,
             endSize: 0,
-            life: 3.8
+            life: 3.8,
+            particleShape: 'star'
         }
     },
     meteorImpact: {
@@ -188,7 +199,8 @@ export const presets = {
             palette: ['#fff6bd', '#ffd166', '#ff7a00', '#c94c1f', '#8c8f96', '#4b4f56'],
             startSize: 7,
             endSize: 0,
-            life: 1.05
+            life: 1.05,
+            particleShape: 'square'
         }
     },
     electricOrb: {
@@ -204,7 +216,8 @@ export const presets = {
             palette: ['#ffffff', '#d9fbff', '#73efff', '#32d7ff', '#008cff'],
             startSize: 4,
             endSize: 1,
-            life: 1.65
+            life: 1.65,
+            particleShape: 'plus'
         }
     },
     poisonCloud: {
@@ -220,7 +233,8 @@ export const presets = {
             palette: ['#b8ff4a', '#65c83b', '#2f7d32', '#3a195c', '#6b2a8f'],
             startSize: 13,
             endSize: 3,
-            life: 4.4
+            life: 4.4,
+            particleShape: 'circle'
         }
     },
     holyLight: {
@@ -236,7 +250,178 @@ export const presets = {
             palette: ['#ffffff', '#fff6c7', '#ffe66d', '#ffc247', '#f4a900'],
             startSize: 6,
             endSize: 1,
-            life: 3.4
+            life: 3.4,
+            particleShape: 'star'
+        }
+    },
+    blizzard: {
+        name: 'Blizzard',
+        emission: { spawnRate: 80, burstAmount: 160, maxParticles: 500 },
+        shape: { type: 'box', radius: 10, width: 140, height: 12 },
+        movement: { minVelocity: 18, maxVelocity: 55, angle: 175, spread: 22 },
+        physics: { gravity: 8, drag: 0.978 },
+        forces: { orbitalVelocity: 0, vortexPull: 0 },
+        visuals: {
+            startColor: '#ffffff',
+            endColor: '#a8d8f0',
+            palette: ['#ffffff', '#e8f4ff', '#c0e0ff', '#9fcae8'],
+            startSize: 3,
+            endSize: 1,
+            life: 3.5,
+            particleShape: 'circle'
+        }
+    },
+    lavaBurst: {
+        name: 'Lava Burst',
+        emission: { spawnRate: 55, burstAmount: 200, maxParticles: 520 },
+        shape: { type: 'ring', radius: 20, width: 60, height: 60 },
+        movement: { minVelocity: 30, maxVelocity: 120, angle: 0, spread: 360 },
+        physics: { gravity: 140, drag: 0.945 },
+        forces: { orbitalVelocity: 0, vortexPull: 0 },
+        visuals: {
+            startColor: '#ff6a00',
+            endColor: '#1a0000',
+            palette: ['#ff9500', '#ff4500', '#cc1100', '#660000', '#111111'],
+            startSize: 6,
+            endSize: 1,
+            life: 1.2,
+            particleShape: 'circle'
+        }
+    },
+    shadowTendrils: {
+        name: 'Shadow Tendrils',
+        emission: { spawnRate: 40, burstAmount: 100, maxParticles: 400 },
+        shape: { type: 'circle', radius: 22, width: 70, height: 70 },
+        movement: { minVelocity: 4, maxVelocity: 22, angle: 0, spread: 360 },
+        physics: { gravity: -6, drag: 0.992 },
+        forces: { orbitalVelocity: 18, vortexPull: -55 },
+        visuals: {
+            startColor: '#2a003f',
+            endColor: '#0a000f',
+            palette: ['#3d0059', '#1e0030', '#0f0018', '#5c007a', '#08000d'],
+            startSize: 5,
+            endSize: 1,
+            life: 5.0,
+            particleShape: 'cross'
+        }
+    },
+    fairyDust: {
+        name: 'Fairy Dust',
+        emission: { spawnRate: 55, burstAmount: 90, maxParticles: 420 },
+        shape: { type: 'circle', radius: 28, width: 70, height: 70 },
+        movement: { minVelocity: 2, maxVelocity: 20, angle: 0, spread: 360 },
+        physics: { gravity: -28, drag: 0.985 },
+        forces: { orbitalVelocity: 12, vortexPull: 0 },
+        visuals: {
+            startColor: '#ffb3e6',
+            endColor: '#c8f7c5',
+            palette: ['#ffb3e6', '#fffacd', '#b3f0ff', '#d4b8ff', '#b3f5d0'],
+            startSize: 4,
+            endSize: 1,
+            life: 4.0,
+            particleShape: 'star'
+        }
+    },
+    shockwaveRing: {
+        name: 'Shockwave Ring',
+        emission: { spawnRate: 0, burstAmount: 280, maxParticles: 560 },
+        shape: { type: 'ring', radius: 48, width: 110, height: 110 },
+        movement: { minVelocity: 180, maxVelocity: 280, angle: 0, spread: 360 },
+        physics: { gravity: 2, drag: 0.96 },
+        forces: { orbitalVelocity: 0, vortexPull: 0 },
+        visuals: {
+            startColor: '#ffffff',
+            endColor: '#888888',
+            palette: ['#ffffff', '#eeeeee', '#cccccc', '#aaaaaa'],
+            startSize: 4,
+            endSize: 0,
+            life: 0.45,
+            particleShape: 'diamond'
+        }
+    },
+    dragonBreath: {
+        name: 'Dragon Breath',
+        emission: { spawnRate: 65, burstAmount: 150, maxParticles: 480 },
+        shape: { type: 'point', radius: 4, width: 20, height: 20 },
+        movement: { minVelocity: 55, maxVelocity: 145, angle: 0, spread: 55 },
+        physics: { gravity: -10, drag: 0.958 },
+        forces: { orbitalVelocity: 0, vortexPull: 0 },
+        visuals: {
+            startColor: '#fff0a0',
+            endColor: '#6b0000',
+            palette: ['#ffee88', '#ff8800', '#ff3300', '#cc0000', '#880000'],
+            startSize: 6,
+            endSize: 1,
+            life: 1.8,
+            particleShape: 'circle'
+        }
+    },
+    portalSwirl: {
+        name: 'Portal Swirl',
+        emission: { spawnRate: 85, burstAmount: 120, maxParticles: 550 },
+        shape: { type: 'ring', radius: 36, width: 90, height: 90 },
+        movement: { minVelocity: 8, maxVelocity: 42, angle: 0, spread: 360 },
+        physics: { gravity: 0, drag: 0.985 },
+        forces: { orbitalVelocity: 180, vortexPull: 60 },
+        visuals: {
+            startColor: '#a020f0',
+            endColor: '#00e5ff',
+            palette: ['#cc44ff', '#7700ff', '#00ccff', '#00ffcc', '#ff00aa'],
+            startSize: 4,
+            endSize: 1,
+            life: 3.0,
+            particleShape: 'plus'
+        }
+    },
+    rainDrops: {
+        name: 'Rain Drops',
+        emission: { spawnRate: 120, burstAmount: 200, maxParticles: 600 },
+        shape: { type: 'box', radius: 8, width: 140, height: 8 },
+        movement: { minVelocity: 160, maxVelocity: 220, angle: 90, spread: 8 },
+        physics: { gravity: 180, drag: 0.99 },
+        forces: { orbitalVelocity: 0, vortexPull: 0 },
+        visuals: {
+            startColor: '#c8dff5',
+            endColor: '#ffffff',
+            palette: ['#b0cce8', '#c8dff5', '#ddeeff', '#ffffff'],
+            startSize: 2,
+            endSize: 1,
+            life: 0.7,
+            particleShape: 'square'
+        }
+    },
+    toxicGeyser: {
+        name: 'Toxic Geyser',
+        emission: { spawnRate: 75, burstAmount: 160, maxParticles: 480 },
+        shape: { type: 'point', radius: 4, width: 18, height: 18 },
+        movement: { minVelocity: 120, maxVelocity: 220, angle: -90, spread: 28 },
+        physics: { gravity: -85, drag: 0.965 },
+        forces: { orbitalVelocity: 0, vortexPull: 0 },
+        visuals: {
+            startColor: '#ccff00',
+            endColor: '#004400',
+            palette: ['#eeff00', '#aaff00', '#55ff00', '#00ff44', '#ffffff'],
+            startSize: 5,
+            endSize: 1,
+            life: 2.2,
+            particleShape: 'circle'
+        }
+    },
+    crystalShatter: {
+        name: 'Crystal Shatter',
+        emission: { spawnRate: 0, burstAmount: 240, maxParticles: 500 },
+        shape: { type: 'ring', radius: 16, width: 50, height: 50 },
+        movement: { minVelocity: 160, maxVelocity: 300, angle: 0, spread: 360 },
+        physics: { gravity: 0, drag: 0.955 },
+        forces: { orbitalVelocity: 0, vortexPull: 0 },
+        visuals: {
+            startColor: '#e8f8ff',
+            endColor: '#0088cc',
+            palette: ['#ffffff', '#d0f0ff', '#88ddff', '#44aaff', '#aaeeff'],
+            startSize: 5,
+            endSize: 0,
+            life: 0.55,
+            particleShape: 'diamond'
         }
     }
 };

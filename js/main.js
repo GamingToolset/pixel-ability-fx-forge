@@ -11,13 +11,19 @@ const canvasSizeSelect = document.querySelector('#canvasSizeSelect');
 const frameCountInput = document.querySelector('#frameCountInput');
 const recordFramesBtn = document.querySelector('#recordFramesBtn');
 const atlasPreview = document.querySelector('#atlasPreview');
+const atlasPreviewLabel = document.querySelector('#atlasPreviewLabel');
 const internalResolution = document.querySelector('#internalResolution');
 const cssScaleLabel = document.querySelector('#cssScaleLabel');
 const hierarchyResolution = document.querySelector('#hierarchyResolution');
 const exportHelp = document.querySelector('#exportHelp');
+const loopModeToggle = document.querySelector('#loopModeToggle');
+const exportAtlasBtn = document.querySelector('#exportAtlasBtn');
+const downloadBtn = document.querySelector('#downloadBtn');
 
 const VIEWPORT_SIZE = 480;
 const CAPTURE_STEP = 1 / 60;
+
+const PARTICLE_SHAPES = ['square', 'circle', 'diamond', 'cross', 'plus', 'star', 'pixel-cluster'];
 
 const clone = (value) => structuredClone(value);
 const pathParts = (path) => path.split('.');
@@ -85,36 +91,85 @@ const getFrameCount = () => {
 
 const getCanvasSize = () => canvas.width;
 
-const getEffectLifetime = (config) => Math.max(0.1, config.visuals.life);
-
-const drawCaptureFrame = (context, captureCanvas, captureEmitter) => {
-    context.clearRect(0, 0, captureCanvas.width, captureCanvas.height);
-    captureEmitter.draw(context);
+const flashButton = (button, message, duration = 1800) => {
+    const original = button.textContent;
+    button.textContent = message;
+    button.disabled = true;
+    setTimeout(() => {
+        button.textContent = original;
+        button.disabled = false;
+    }, duration);
 };
 
-const createCaptureEmitter = (size) => {
-    const captureEmitter = new Emitter(activeConfig, { width: size, height: size });
-    captureEmitter.reset();
-    captureEmitter.burst(activeConfig.emission.burstAmount);
-    return captureEmitter;
-};
-
-const captureFrameSequence = async () => {
+const captureFrameSequenceLoop = async () => {
     const frameCount = getFrameCount();
     const size = getCanvasSize();
-    const lifetime = getEffectLifetime(activeConfig);
+    const T = Math.max(0.1, activeConfig.visuals.life);
+
+    const captureCanvas = document.createElement('canvas');
+    captureCanvas.width = size;
+    captureCanvas.height = size;
+    const ctx = captureCanvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    const captureEmitter = new Emitter(activeConfig, { width: size, height: size });
+    captureEmitter.reset();
+
+    const warmupTime = 2 * T;
+    let t = 0;
+    while (t < warmupTime) {
+        captureEmitter.update(CAPTURE_STEP, true);
+        t += CAPTURE_STEP;
+    }
+
+    const frames = [];
+    let elapsed = 0;
+
+    for (let i = 0; i < frameCount; i++) {
+        const targetOffset = (i * T) / frameCount;
+
+        while (elapsed + CAPTURE_STEP <= targetOffset) {
+            captureEmitter.update(CAPTURE_STEP, true);
+            elapsed += CAPTURE_STEP;
+        }
+        const remainder = targetOffset - elapsed;
+        if (remainder > 1e-6) {
+            captureEmitter.update(remainder, true);
+            elapsed = targetOffset;
+        }
+
+        ctx.clearRect(0, 0, size, size);
+        captureEmitter.draw(ctx);
+        frames.push(await canvasToBlob(captureCanvas));
+    }
+
+    return { frames, frameCount, size, loopMode: 'loop' };
+};
+
+const captureFrameSequenceOneShot = async () => {
+    const frameCount = getFrameCount();
+    const size = getCanvasSize();
+    const lifetime = Math.max(0.1, activeConfig.visuals.life);
+
     const captureCanvas = document.createElement('canvas');
     captureCanvas.width = size;
     captureCanvas.height = size;
     const captureContext = captureCanvas.getContext('2d');
     captureContext.imageSmoothingEnabled = false;
 
-    const captureEmitter = createCaptureEmitter(size);
+    const captureEmitter = new Emitter(activeConfig, { width: size, height: size });
+    captureEmitter.reset();
+    captureEmitter.burst(activeConfig.emission.burstAmount);
+
     const frames = [];
     let elapsed = 0;
+    const startT = lifetime * 0.05;
+    const endT = lifetime * 0.92;
 
     for (let index = 0; index < frameCount; index += 1) {
-        const targetTime = frameCount === 1 ? 0 : (lifetime * index) / (frameCount - 1);
+        const targetTime = frameCount === 1
+            ? startT
+            : startT + ((endT - startT) * index) / (frameCount - 1);
 
         while (elapsed + CAPTURE_STEP < targetTime) {
             captureEmitter.update(CAPTURE_STEP, false);
@@ -127,11 +182,17 @@ const captureFrameSequence = async () => {
             elapsed = targetTime;
         }
 
-        drawCaptureFrame(captureContext, captureCanvas, captureEmitter);
+        captureContext.clearRect(0, 0, size, size);
+        captureEmitter.draw(captureContext);
         frames.push(await canvasToBlob(captureCanvas));
     }
 
-    return { frames, frameCount, size };
+    return { frames, frameCount, size, loopMode: 'oneshot' };
+};
+
+const captureFrameSequence = async () => {
+    const useLoop = loopModeToggle ? loopModeToggle.checked : true;
+    return useLoop ? captureFrameSequenceLoop() : captureFrameSequenceOneShot();
 };
 
 const createAtlasFromFrames = async (frames, frameCount, size) => {
@@ -150,13 +211,19 @@ const createAtlasFromFrames = async (frames, frameCount, size) => {
     return atlasCanvas;
 };
 
-const updateAtlasPreview = (dataUrl) => {
+const updateAtlasPreview = (dataUrl, loopMode) => {
     atlasPreview.classList.remove('empty');
     atlasPreview.textContent = '';
     const image = document.createElement('img');
     image.src = dataUrl;
     image.alt = 'Latest exported sprite atlas preview';
     atlasPreview.append(image);
+
+    if (atlasPreviewLabel) {
+        atlasPreviewLabel.textContent = loopMode === 'loop'
+            ? 'Atlas Preview · Seamless Loop'
+            : 'Atlas Preview · One-Shot';
+    }
 };
 
 const applyEmitterConfig = ({ reset = false } = {}) => {
@@ -275,6 +342,8 @@ const randomizeConfig = () => {
         setByPath(randomized, select.dataset.select, options[Math.floor(Math.random() * options.length)]);
     });
 
+    randomized.visuals.particleShape = PARTICLE_SHAPES[Math.floor(Math.random() * PARTICLE_SHAPES.length)];
+
     const paletteLength = Math.floor(randomInRange(3, 5, 1));
     const palette = Array.from({ length: paletteLength }, randomHighSaturationColor);
     randomized.visuals.palette = palette;
@@ -349,6 +418,7 @@ const loadPreset = (key) => {
 };
 
 const recordFrames = async () => {
+    recordFramesBtn.disabled = true;
     const { frames } = await captureFrameSequence();
     const zip = new JSZip();
     const presetName = sanitizeFilenamePart(activeConfig.name || activePresetKey);
@@ -362,17 +432,22 @@ const recordFrames = async () => {
     const url = URL.createObjectURL(blob);
     downloadUrl(url, `sprite-frames-${presetName}-${timestamp}.zip`);
     URL.revokeObjectURL(url);
+
+    flashButton(recordFramesBtn, '✓ Saved ZIP');
 };
 
 const exportAtlas = async () => {
-    const { frames, frameCount, size } = await captureFrameSequence();
+    exportAtlasBtn.disabled = true;
+    const { frames, frameCount, size, loopMode } = await captureFrameSequence();
     const atlasCanvas = await createAtlasFromFrames(frames, frameCount, size);
     const presetName = sanitizeFilenamePart(activeConfig.name || activePresetKey);
     const timestamp = formatTimestamp();
     const dataUrl = atlasCanvas.toDataURL('image/png');
 
-    updateAtlasPreview(dataUrl);
+    updateAtlasPreview(dataUrl, loopMode);
     downloadUrl(dataUrl, `atlas-${presetName}-${timestamp}.png`);
+
+    flashButton(exportAtlasBtn, '✓ Atlas Saved');
 };
 
 const bindActions = () => {
@@ -383,11 +458,12 @@ const bindActions = () => {
         emitter.reset();
         emitter.burst(activeConfig.emission.burstAmount);
     });
-    document.querySelector('#downloadBtn').addEventListener('click', () => {
+    downloadBtn.addEventListener('click', () => {
         renderer.exportPng(`pixel-fx-${sanitizeFilenamePart(activeConfig.name || activePresetKey)}-${formatTimestamp()}.png`);
+        flashButton(downloadBtn, '✓ PNG Saved');
     });
     recordFramesBtn.addEventListener('click', recordFrames);
-    document.querySelector('#exportAtlasBtn').addEventListener('click', exportAtlas);
+    exportAtlasBtn.addEventListener('click', exportAtlas);
     document.querySelector('#randomizeBtn').addEventListener('click', randomizeConfig);
     canvasSizeSelect.addEventListener('change', () => resizeCanvas(Number(canvasSizeSelect.value)));
     frameCountInput.addEventListener('input', updateRecordButtonLabel);

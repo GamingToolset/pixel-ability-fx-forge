@@ -35,7 +35,8 @@ export const defaultEmitterConfig = {
         palette: ['#fff1a8', '#ffd166', '#f77f00'],
         startSize: 5,
         endSize: 1,
-        life: 1.25
+        life: 1.25,
+        particleShape: 'square'
     }
 };
 
@@ -139,7 +140,10 @@ export default class Emitter {
             gravity: physics.gravity,
             drag: physics.drag,
             orbitalVelocity: forces.orbitalVelocity,
-            vortexPull: forces.vortexPull
+            vortexPull: forces.vortexPull,
+            shape: visuals.particleShape || 'square',
+            canvasWidth: this.bounds.width,
+            canvasHeight: this.bounds.height
         };
     }
 

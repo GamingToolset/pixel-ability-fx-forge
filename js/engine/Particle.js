@@ -1,3 +1,5 @@
+const BOUNDARY_FADE_PX = 12;
+
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -21,6 +23,67 @@ const mixColor = (from, to, amount) => {
     return `rgb(${Math.round(lerp(a.r, b.r, amount))}, ${Math.round(lerp(a.g, b.g, amount))}, ${Math.round(lerp(a.b, b.b, amount))})`;
 };
 
+const drawShape = (context, x, y, size, shape) => {
+    const r = size / 2;
+    const cx = Math.round(x);
+    const cy = Math.round(y);
+    const half = Math.round(r);
+
+    switch (shape) {
+        case 'circle': {
+            for (let row = -half; row <= half; row++) {
+                const chord = Math.round(Math.sqrt(Math.max(0, r * r - row * row)) * 2);
+                if (chord <= 0) continue;
+                context.fillRect(Math.round(cx - chord / 2), cy + row, chord, 1);
+            }
+            break;
+        }
+        case 'diamond': {
+            for (let row = -half; row <= half; row++) {
+                const chord = Math.max(1, size - Math.abs(row) * 2);
+                context.fillRect(Math.round(cx - chord / 2), cy + row, chord, 1);
+            }
+            break;
+        }
+        case 'cross': {
+            for (let i = -half; i <= half; i++) {
+                context.fillRect(cx + i, cy + i, 1, 1);
+                context.fillRect(cx - i, cy + i, 1, 1);
+            }
+            break;
+        }
+        case 'plus': {
+            const thickness = Math.max(1, Math.floor(size / 3));
+            const halfThick = Math.floor(thickness / 2);
+            context.fillRect(cx - half, cy - halfThick, size, thickness);
+            context.fillRect(cx - halfThick, cy - half, thickness, size);
+            break;
+        }
+        case 'star': {
+            const arm = Math.max(1, Math.floor(size / 3));
+            context.fillRect(cx - half, cy - arm, size, arm * 2);
+            context.fillRect(cx - arm, cy - half, arm * 2, size);
+            context.fillRect(cx - half + 1, cy - half + 1, 1, 1);
+            context.fillRect(cx + half - 1, cy - half + 1, 1, 1);
+            context.fillRect(cx - half + 1, cy + half - 1, 1, 1);
+            context.fillRect(cx + half - 1, cy + half - 1, 1, 1);
+            break;
+        }
+        case 'pixel-cluster': {
+            context.fillRect(cx - 1, cy - 1, 1, 1);
+            context.fillRect(cx,     cy - 1, 1, 1);
+            context.fillRect(cx - 1, cy,     1, 1);
+            context.fillRect(cx,     cy,     1, 1);
+            break;
+        }
+        case 'square':
+        default: {
+            context.fillRect(cx - half, cy - half, size, size);
+            break;
+        }
+    }
+};
+
 export default class Particle {
     constructor({
         x,
@@ -37,7 +100,10 @@ export default class Particle {
         gravity,
         drag,
         orbitalVelocity,
-        vortexPull
+        vortexPull,
+        shape,
+        canvasWidth,
+        canvasHeight
     }) {
         this.x = x;
         this.y = y;
@@ -55,6 +121,9 @@ export default class Particle {
         this.drag = drag;
         this.orbitalVelocity = orbitalVelocity;
         this.vortexPull = vortexPull;
+        this.shape = shape || 'square';
+        this.canvasWidth = canvasWidth || 160;
+        this.canvasHeight = canvasHeight || 160;
         this.alive = true;
     }
 
@@ -92,14 +161,15 @@ export default class Particle {
 
         if (size <= 0) return;
 
-        context.globalAlpha = fadeOut;
+        const boundaryAlpha =
+            clamp(this.x / BOUNDARY_FADE_PX, 0, 1) *
+            clamp((this.canvasWidth - this.x) / BOUNDARY_FADE_PX, 0, 1) *
+            clamp(this.y / BOUNDARY_FADE_PX, 0, 1) *
+            clamp((this.canvasHeight - this.y) / BOUNDARY_FADE_PX, 0, 1);
+
+        context.globalAlpha = fadeOut * boundaryAlpha;
         context.fillStyle = mixColor(this.startColor, this.endColor, normalizedAge);
-        context.fillRect(
-            Math.round(this.x - size / 2),
-            Math.round(this.y - size / 2),
-            size,
-            size
-        );
+        drawShape(context, this.x, this.y, size, this.shape);
         context.globalAlpha = 1;
     }
 }
