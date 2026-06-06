@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Ability FX Forge</title>
+    <style>
+        :root {
+            --bg-dark: #1e1e24;
+            --panel-bg: #2b2b36;
+            --text-main: #dcdcdc;
+            --accent: #f2c94c;
+            --accent-success: #27ae60;
+            --border-color: #444;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Courier New', monospace, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                linear-gradient(45deg, #18181c 25%, transparent 25%, transparent 75%, #18181c 75%, #18181c), 
+                linear-gradient(45deg, #18181c 25%, transparent 25%, transparent 75%, #18181c 75%, #18181c);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+
+        .panel {
+            width: 260px;
+            background-color: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+            box-sizing: border-box;
+        }
+
+        .left-panel { border-left: none; border-top: none; border-bottom: none; }
+        .right-panel { border-right: none; border-top: none; border-bottom: none; }
+
+        .canvas-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        canvas {
+            background-image: 
+                linear-gradient(45deg, #2a2a2a 25%, transparent 25%, transparent 75%, #2a2a2a 75%, #2a2a2a), 
+                linear-gradient(45deg, #2a2a2a 25%, #333333 25%, #333333 75%, #2a2a2a 75%, #2a2a2a);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 8px;
+            
+            image-rendering: pixelated; 
+            width: 480px; /* Увеличено для холста 160x160 */
+            height: 480px;
+        }
+
+        h3 { margin: 0 0 10px 0; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;}
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 12px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        button {
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+            text-transform: uppercase;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        .btn-download {
+            background-color: var(--accent-success);
+            color: white;
+            margin-top: auto;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 5px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .title-bar {
+            position: absolute;
+            top: 20px;
+            color: #888;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="panel left-panel">
+        <h3>Emitter Controls</h3>
+        
+        <div class="control-group">
+            <label>Ability Type</label>
+            <select id="abilitySelect">
+                <option value="fire">Fire · AoE</option>
+                <option value="earth">Earth · Barrier</option>
+                <option value="wood">Wood · Heal</option>
+            </select>
+        </div>
+
+        <button id="castBtn">[ CAST ABILITY ]</button>
+
+        <div class="control-group" style="margin-top: 15px;">
+            <label>Particle Density (Multiplier)</label>
+            <input type="range" id="densitySlider" min="0.5" max="3" step="0.5" value="1">
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="showTarget" checked>
+            <label for="showTarget">Show Target Dummy</label>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <div class="title-bar">Ability FX Engine (160x160 Transparent)</div>
+        <canvas id="fxCanvas" width="160" height="160"></canvas>
+    </div>
+
+    <div class="panel right-panel">
+        <h3>Export Tools</h3>
+        <div class="control-group">
+            <label>Resolution</label>
+            <select disabled>
+                <option>160px Base</option>
+            </select>
+        </div>
+        <p style="font-size: 10px; color: #888; margin-top: 0;">Cast the ability, then click export at any frame to capture the state.</p>
+        <button id="downloadBtn" class="btn-download">Export Frame (PNG)</button>
+    </div>
+
+    <script>
+        'use strict';
+
+        const canvas = document.getElementById('fxCanvas');
+        const mainCtx = canvas.getContext('2d');
+        mainCtx.imageSmoothingEnabled = false;
+
+        const rnd  = (a, b) => a + Math.random() * (b - a);
+        const rndI = (a, b) => Math.floor(rnd(a, b + 1));
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+        let globalConfig = {
+            density: 1.0,
+            showTarget: true
+        };
+
+        // UI Listeners
+        document.getElementById('densitySlider').addEventListener('input', (e) => globalConfig.density = parseFloat(e.target.value));
+        document.getElementById('showTarget').addEventListener('change', (e) => globalConfig.showTarget = e.target.checked);
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const link = document.createElement('a');
+            const type = document.getElementById('abilitySelect').value;
+            link.download = `fx-${type}-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+        document.getElementById('castBtn').addEventListener('click', () => {
+            triggerAbility();
+        });
+        document.getElementById('abilitySelect').addEventListener('change', () => {
+            triggerAbility();
+        });
+
+        // ── Particle ──────────────────────────────────────────────
+        class P {
+            constructor(x, y, vx, vy, life, sz, col, grav = 0, drag = 0.96) {
+                this.x = x; this.y = y;
+                this.vx = vx; this.vy = vy;
+                this.life = life; this.maxLife = life;
+                this.sz = sz; this.col = col;
+                this.grav = grav; this.drag = drag;
+                this.alive = true;
+            }
+            step(dt) {
+                const f = dt * 60;
+                this.vy += this.grav * dt;
+                this.vx *= Math.pow(this.drag, f);
+                this.vy *= Math.pow(this.drag, f);
+                this.x  += this.vx * dt;
+                this.y  += this.vy * dt;
+                this.life -= dt;
+                if (this.life <= 0) this.alive = false;
+            }
+            draw(ctx) {
+                const t  = clamp(this.life / this.maxLife, 0, 1);
+                const al = t < 0.3 ? t / 0.3 : 1.0;
+                const sz = Math.max(2, Math.round(this.sz * (0.3 + t * 0.7)));
+                ctx.globalAlpha = al;
+                ctx.fillStyle   = this.col;
+                ctx.fillRect(Math.round(this.x) - (sz >> 1), Math.round(this.y) - (sz >> 1), sz, sz);
+            }
+        }
+
+        // ── Base FX Class ─────────────────────────────────────────
+        class FX {
+            constructor(ctx, w, h) {
+                this.ctx = ctx;
+                this.W = w; this.H = h;
+                this.cx = this.W >> 1;  this.cy = this.H >> 1;
+                this.ps = []; this.t = 0;
+            }
+            _step(dt) {
+                this.t += dt;
+                for (let i = this.ps.length - 1; i >= 0; i--) {
+                    this.ps[i].step(dt);
+                    if (!this.ps[i].alive) this.ps.splice(i, 1);
+                }
+            }
+            _clear() {
+                // Полная очистка холста для обеспечения прозрачности при экспорте
+                this.ctx.clearRect(0, 0, this.W, this.H);
+            }
+            _ring(cx, cy, rad, dsz, col, alpha, n, aOff, skipEv) {
+                const ctx = this.ctx;
+                skipEv = skipEv || 0;
+                for (let i = 0; i < n; i++) {
+                    if (skipEv > 0 && i % skipEv === 0) continue;
+                    const a  = (i / n) * Math.PI * 2 + aOff;
+                    const fl = 0.5 + 0.5 * Math.sin(this.t * 7 + i * 0.9);
+                    ctx.globalAlpha = alpha * fl;
+                    ctx.fillStyle   = col;
+                    const px = Math.round(cx + Math.cos(a) * rad) - (dsz >> 1);
+                    const py = Math.round(cy + Math.sin(a) * rad) - (dsz >> 1);
+                    ctx.fillRect(px, py, dsz, dsz);
+                }
+            }
+            _cross(cx, cy, sz, thick, col, alpha) {
+                this.ctx.globalAlpha = alpha;
+                this.ctx.fillStyle   = col;
+                this.ctx.fillRect(cx - sz,    cy - thick, sz * 2,    thick * 2);
+                this.ctx.fillRect(cx - thick, cy - sz,    thick * 2, sz * 2);
+            }
+            _sqGlow(cx, cy, maxR, col, alpha, steps) {
+                const ctx = this.ctx;
+                for (let s = 1; s <= steps; s++) {
+                    const r2 = Math.round(maxR * s / steps);
+                    ctx.globalAlpha = alpha * (1 - s / steps) * 0.9;
+                    ctx.fillStyle   = col;
+                    ctx.fillRect(cx - r2, cy - r2, r2 * 2, r2 * 2);
+                }
+            }
+            _mob(tint) {
+                if (!globalConfig.showTarget) return;
+                const { ctx, cx, cy } = this;
+                ctx.globalAlpha = 0.8;
+                ctx.fillStyle   = tint;
+                ctx.fillRect(cx - 8,  cy - 16, 16, 19);
+                ctx.fillRect(cx - 11, cy -  6, 22, 10);
+                ctx.fillRect(cx - 6,  cy +  3,  5,  8);
+                ctx.fillRect(cx + 1,  cy +  3,  5,  8);
+            }
+            _drawPs() { this.ps.forEach(p => p.draw(this.ctx)); }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        class FireFX extends FX {
+            constructor(ctx, w, h) {
+                super(ctx, w, h);
+                this.BURST = ['#FFE500','#FFBB00','#FF7700','#FF4400','#DD1100'];
+                this.EMBER = ['#FFD000','#FF9900','#FF5500'];
+                this.active   = false;
+                this.phaseT   = 0;
+                this.ringR    = 0;
+                this.emTick   = 0;
+                this.flashA   = 0;   
+                this.shockR   = 0;   
+            }
+
+            cast() {
+                this.ps = [];
+                this.active = true; this.phaseT = 0; this.ringR = 0;
+                this.flashA = 1.0;  this.shockR = 0;
+                const { cx, cy } = this;
+                const den = globalConfig.density;
+
+                for (let i = 0; i < 20 * den; i++) {
+                    const a = rnd(0, Math.PI * 2), sp = rnd(10, 40);
+                    this.ps.push(new P(cx, cy, Math.cos(a)*sp, Math.sin(a)*sp, rnd(.1, .28), rndI(4, 8), '#FFFFFF', 0, .85));
+                }
+                for (let i = 0; i < 90 * den; i++) {
+                    const a  = rnd(0, Math.PI * 2), sp = rnd(30, 130), sz = rndI(3, 7);
+                    const col = this.BURST[rndI(0, this.BURST.length - 1)];
+                    this.ps.push(new P(cx + rnd(-4, 4), cy + rnd(-4, 4), Math.cos(a) * sp, Math.sin(a) * sp, rnd(.4, 1.5), sz, col, -8, .90));
+                }
+                for (let i = 0; i < 40 * den; i++) {
+                    const ox = rnd(-50, 50);
+                    this.ps.push(new P(cx + ox, cy + rnd(-12, 8), rnd(-20, 20), rnd(-80, -25), rnd(.7, 2.2), rndI(2, 4), this.EMBER[rndI(0, 2)], 16, .97));
+                }
+                for (let i = 0; i < 20 * den; i++) {
+                    const a = rnd(-Math.PI * .15, Math.PI * 1.15), sp = rnd(20, 70);
+                    this.ps.push(new P(cx, cy + 8, Math.cos(a)*sp, Math.abs(Math.sin(a))*sp*.3, rnd(.3, .8), rndI(2, 4), '#FF8800', 30, .88));
+                }
+            }
+
+            step(dt) {
+                this._step(dt);
+                this.flashA = Math.max(0, this.flashA - dt * 4);
+                if (!this.active) return;
+                this.phaseT += dt;
+                this.ringR   = Math.min(64, this.phaseT * 200);
+                this.shockR  = Math.min(55, this.phaseT * 165);
+                this.emTick += dt;
+                if (this.emTick > .04) {
+                    this.emTick = 0;
+                    if(Math.random() < globalConfig.density) {
+                        const a = rnd(0, Math.PI * 2), orb = rnd(4, 36);
+                        this.ps.push(new P(this.cx + Math.cos(a)*orb, this.cy + Math.sin(a)*orb, rnd(-14, 14), rnd(-65, -18), rnd(.3, 1.2), rndI(2, 3), this.EMBER[rndI(0, 2)], 18, .97));
+                    }
+                }
+                if (this.phaseT > 2.8) { this.active = false; this.ringR = 0; this.shockR = 0; }
+            }
+
+            draw() {
+                this._clear();
+                const { ctx, cx, cy } = this;
+                if (this.active || this.flashA > 0) {
+                    const prog = this.active ? clamp(this.phaseT / 2.8, 0, 1) : 1;
+                    const gA   = Math.max(0, (1 - prog * 1.2) * .55 + this.flashA * .4);
+                    this._sqGlow(cx, cy, 64, '#FF5500', gA, 8);
+                    this._sqGlow(cx, cy, 30, '#FFCC00', gA * .7, 5);
+                }
+                if (this.flashA > 0) {
+                    const fSz = Math.round(12 * this.flashA);
+                    ctx.globalAlpha = this.flashA * .95; ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(cx - fSz, cy - fSz, fSz * 2, fSz * 2);
+                    ctx.fillStyle = '#FFEE88'; ctx.globalAlpha = this.flashA * .6;
+                    ctx.fillRect(cx - fSz * 2, cy - fSz * 2, fSz * 4, fSz * 4);
+                }
+                this._mob('#2a0800');
+                if (this.ringR > 3) {
+                    const prog = this.ringR / 64, fade = Math.max(0, 1 - prog);
+                    const n = Math.floor(this.ringR * 1.6);
+                    for (let i = 0; i < n; i++) {
+                        if (Math.random() > .55) continue;
+                        const a = (i / n) * Math.PI * 2;
+                        const col = prog < .35 ? '#FFE500' : prog < .65 ? '#FF8800' : '#FF3300';
+                        ctx.globalAlpha = fade * .98; ctx.fillStyle = col;
+                        const dsz = prog < .5 ? 3 : 2;
+                        ctx.fillRect(Math.round(cx + Math.cos(a) * this.ringR) - 1, Math.round(cy + Math.sin(a) * this.ringR) - 1, dsz, dsz);
+                    }
+                }
+                if (this.shockR > 3) {
+                    const prog = this.shockR / 55, fade = Math.max(0, 1 - prog) * .7;
+                    const n = Math.floor(this.shockR * 1.2);
+                    for (let i = 0; i < n; i++) {
+                        if (Math.random() > .6) continue;
+                        const a = (i / n) * Math.PI * 2;
+                        ctx.globalAlpha = fade; ctx.fillStyle = '#FF6600';
+                        ctx.fillRect(Math.round(cx + Math.cos(a) * this.shockR) - 1, Math.round(cy + Math.sin(a) * this.shockR) - 1, 2, 2);
+                    }
+                }
+                this._drawPs();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        class EarthFX extends FX {
+            constructor(ctx, w, h) {
+                super(ctx, w, h);
+                this.STONE = ['#8B6914','#C8A035','#D4B860','#A07840','#6B4A10'];
+                this.DUST  = ['#C8A035','#A07840','#8B6914'];
+                this.angle = 0; this.life  = 0; this.MAX   = 8;
+            }
+
+            cast() {
+                this.ps = [];
+                this.life = this.MAX;
+                const { cx, cy } = this;
+                const den = globalConfig.density;
+
+                for (let i = 0; i < 50 * den; i++) {
+                    const a = rnd(0, Math.PI*2), sp = rnd(35, 95);
+                    this.ps.push(new P(cx + rnd(-5, 5), cy + rnd(-5, 5), Math.cos(a)*sp, Math.sin(a)*sp, rnd(.25, .8), rndI(2, 5), this.STONE[rndI(0, this.STONE.length - 1)], 90, .87));
+                }
+                for (let i = 0; i < 28 * den; i++) {
+                    const a = (i / (28*den)) * Math.PI * 2, d = 52 + rnd(-5, 5);
+                    this.ps.push(new P(cx + Math.cos(a)*d, cy + Math.sin(a)*d, Math.cos(a)*rnd(8, 22), -rnd(10, 28), rnd(.4, 1.0), rndI(3, 5), this.DUST[rndI(0, 2)], 20, .95));
+                }
+            }
+
+            step(dt) {
+                this._step(dt);
+                this.angle += dt * .65;
+                if (this.life > 0) this.life -= dt;
+            }
+
+            draw() {
+                this._clear();
+                const { ctx, cx, cy } = this;
+                const lr = clamp(this.life / this.MAX, 0, 1);
+
+                if (lr > 0) this._sqGlow(cx, cy, 55, '#8B6914', lr * .12, 5);
+                this._mob('#4a3c26');
+
+                if (lr > 0) {
+                    const pulse = .75 + .25 * Math.sin(this.t * 5);
+                    this._ring(cx, cy, 52, 3, '#C8A035', lr * .95 * pulse, 40, this.angle, 0);
+                    this._ring(cx, cy, 40, 2, '#8B6914', lr * .65 * pulse, 26, -this.angle * 1.5, 5);
+
+                    for (let i = 0; i < 4; i++) {
+                        const a  = (i / 4) * Math.PI * 2 + this.angle * .45;
+                        const px = Math.round(cx + Math.cos(a) * 52), py = Math.round(cy + Math.sin(a) * 52);
+                        ctx.globalAlpha = lr; ctx.fillStyle = '#D4B860';
+                        ctx.fillRect(px - 3, py - 3, 6, 6);
+                        ctx.fillStyle = '#6B4A10'; ctx.fillRect(px - 1, py - 1, 3, 3);
+                    }
+
+                    const segs = 36, live = Math.round(segs * lr);
+                    ctx.fillStyle = '#E8C870';
+                    for (let i = 0; i < live; i++) {
+                        const a  = (i / segs) * Math.PI * 2 - Math.PI / 2;
+                        ctx.globalAlpha = lr * .85;
+                        ctx.fillRect(Math.round(cx + Math.cos(a) * 46) - 1, Math.round(cy + Math.sin(a) * 46) - 1, 2, 2);
+                    }
+
+                    for (const [ox, oy] of [[-8,-8],[8,-8],[-8,8],[8,8]]) {
+                        ctx.globalAlpha = lr * .7 * pulse; ctx.fillStyle = '#C8A035';
+                        ctx.fillRect(cx + ox - 1, cy + oy - 1, 3, 3);
+                    }
+                    this._cross(cx, cy, 8, 1, '#8B6914', lr * .5);
+                    ctx.globalAlpha = lr; ctx.fillStyle = '#FFE080';
+                    ctx.fillRect(cx - 1, cy - 1, 3, 3);
+                }
+
+                this._drawPs();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        class WoodFX extends FX {
+            constructor(ctx, w, h) {
+                super(ctx, w, h);
+                this.GREEN = ['#2ECC40','#27AE60','#7CFC00','#ADFF2F','#55DD66'];
+                this.life  = 0; this.MAX   = 10;
+                this.spTick = 0; this.angle  = 0;
+            }
+
+            cast() {
+                this.ps = [];
+                this.life = this.MAX;
+                const { cx, cy } = this;
+                const den = globalConfig.density;
+
+                for (let i = 0; i < 60 * den; i++) {
+                    const a = rnd(0, Math.PI*2), sp = rnd(12, 70);
+                    this.ps.push(new P(cx + rnd(-7, 7), cy + rnd(-7, 7), Math.cos(a)*sp*.65, Math.sin(a)*sp*.65 - rnd(5, 18), rnd(.5, 1.8), rndI(2, 4), this.GREEN[rndI(0, this.GREEN.length - 1)], -12, .93));
+                }
+                for (let i = 0; i < 14 * den; i++) {
+                    const a = rnd(0, Math.PI*2), sp = rnd(24, 55);
+                    this.ps.push(new P(cx, cy, Math.cos(a)*sp, Math.sin(a)*sp, rnd(.15, .4), rndI(3, 6), '#FFFFFF', 0, .90));
+                }
+            }
+
+            step(dt) {
+                this._step(dt);
+                this.angle += dt * .4;
+                if (this.life <= 0) return;
+                this.life -= dt;
+                this.spTick += dt;
+                if (this.spTick > .055) {
+                    this.spTick = 0;
+                    if(Math.random() < globalConfig.density) {
+                        const a = rnd(0, Math.PI*2), rad = rnd(6, 72);
+                        this.ps.push(new P(this.cx + Math.cos(a)*rad, this.cy + Math.sin(a)*rad, rnd(-5, 5), rnd(-38, -52), rnd(.7, 1.9), rndI(2, 3), this.GREEN[rndI(0, this.GREEN.length - 1)], -6, .98));
+                        if (Math.random() < .25) {
+                            this.ps.push(new P(this.cx + Math.cos(a)*rad*.7, this.cy + Math.sin(a)*rad*.7, rnd(-3, 3), rnd(-18, -35), rnd(.3, .7), 2, '#CCFFCC', -4, .97));
+                        }
+                    }
+                }
+            }
+
+            draw() {
+                this._clear();
+                const { ctx, cx, cy } = this;
+                const lr = clamp(this.life / this.MAX, 0, 1);
+
+                if (lr > 0) {
+                    const pulse = .7 + .3 * Math.sin(this.t * 3.5);
+                    this._sqGlow(cx, cy, 76, '#2ECC40', lr * pulse * .18, 7);
+
+                    const n = 44;
+                    for (let i = 0; i < n; i++) {
+                        const a = (i / n) * Math.PI * 2 + this.angle * .2;
+                        const rp = 76 + Math.sin(this.t * 4 + i * .35) * 2;
+                        const fl = (Math.sin(this.t * 7 + i * 1.1) + 1) * .5;
+                        const dsz = i % 7 === 0 ? 4 : 2;
+                        const col = i % 4 === 0 ? '#7CFC00' : i % 9 === 0 ? '#FFFFFF' : '#27AE60';
+                        ctx.globalAlpha = lr * pulse * (.35 + fl * .65); ctx.fillStyle = col;
+                        ctx.fillRect(Math.round(cx + Math.cos(a)*rp) - (dsz >> 1), Math.round(cy + Math.sin(a)*rp) - (dsz >> 1), dsz, dsz);
+                    }
+                    this._ring(cx, cy, 58, 2, '#2ECC40', lr * .32 * pulse, 28, this.angle * .6, 0);
+                }
+
+                this._mob('#1e3d23');
+
+                if (lr > 0) {
+                    const pulse = .8 + .2 * Math.sin(this.t * 3.5);
+                    const csz   = Math.round(11 * pulse);
+                    this._cross(cx, cy, csz, 3, '#003308', lr * .55);
+                    this._cross(cx, cy, csz, 2, '#2ECC40', lr * .95);
+                    this._cross(cx, cy, csz - 3, 1, '#AAFFAA', lr * .55);
+                    ctx.globalAlpha = lr; ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(cx - 1, cy - 1, 3, 3);
+                }
+
+                this._drawPs();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // ── Main Controller ───────────────────────────────────────
+        const w = canvas.width, h = canvas.height;
+        const fxEngines = {
+            fire: new FireFX(mainCtx, w, h),
+            earth: new EarthFX(mainCtx, w, h),
+            wood: new WoodFX(mainCtx, w, h)
+        };
+        
+        let currentActive = null;
+
+        function triggerAbility() {
+            const type = document.getElementById('abilitySelect').value;
+            // Очищаем старый эффект при переключении
+            if (currentActive && currentActive !== fxEngines[type]) {
+                currentActive.ps = []; 
+                currentActive.life = 0;
+                currentActive.active = false;
+            }
+            currentActive = fxEngines[type];
+            currentActive.cast();
+        }
+
+        let prev = performance.now();
+        function loop(now) {
+            const dt = Math.min((now - prev) / 1000, 0.05);
+            prev = now;
+            
+            // Если эффект не выбран, просто чистим холст и рисуем моба
+            if (!currentActive) {
+                mainCtx.clearRect(0, 0, w, h);
+                if (globalConfig.showTarget) fxEngines.fire._mob('#444');
+            } else {
+                currentActive.step(dt);
+                currentActive.draw();
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        // Запуск
+        requestAnimationFrame(loop);
+        triggerAbility(); // Кастуем дефолтный (Fire) при старте
+    </script>
+</body>
+</html>
