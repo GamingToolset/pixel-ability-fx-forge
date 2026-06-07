@@ -13,7 +13,8 @@ export const presets = {
             startSize: 7,
             endSize: 1,
             life: 1.15,
-            particleShape: 'circle'
+            particleShape: 'circle',
+            blendMode: 'lighter'
         }
     },
     frostNova: {
@@ -30,7 +31,8 @@ export const presets = {
             startSize: 5,
             endSize: 1,
             life: 1.8,
-            particleShape: 'diamond'
+            particleShape: 'diamond',
+            blendMode: 'lighter'
         }
     },
     voidImplosion: {
@@ -47,7 +49,8 @@ export const presets = {
             startSize: 6,
             endSize: 0,
             life: 2.25,
-            particleShape: 'square'
+            particleShape: 'square',
+            blendMode: 'lighter'
         }
     },
     acidPool: {
@@ -64,7 +67,8 @@ export const presets = {
             startSize: 4,
             endSize: 1,
             life: 1.55,
-            particleShape: 'circle'
+            particleShape: 'circle',
+            blendMode: 'lighter'
         }
     },
     magicAura: {
@@ -81,7 +85,8 @@ export const presets = {
             startSize: 4,
             endSize: 1,
             life: 2.8,
-            particleShape: 'star'
+            particleShape: 'star',
+            blendMode: 'lighter'
         }
     },
     lightningStrike: {
@@ -98,7 +103,8 @@ export const presets = {
             startSize: 3,
             endSize: 0,
             life: 0.35,
-            particleShape: 'cross'
+            particleShape: 'cross',
+            blendMode: 'lighter'
         }
     },
     healBurst: {
@@ -115,7 +121,8 @@ export const presets = {
             startSize: 5,
             endSize: 1,
             life: 3.2,
-            particleShape: 'plus'
+            particleShape: 'plus',
+            blendMode: 'lighter'
         }
     },
     bloodSplatter: {
@@ -132,7 +139,8 @@ export const presets = {
             startSize: 4,
             endSize: 1,
             life: 0.95,
-            particleShape: 'pixel-cluster'
+            particleShape: 'pixel-cluster',
+            blendMode: 'lighter'
         }
     },
     smokePuff: {
@@ -149,7 +157,8 @@ export const presets = {
             startSize: 14,
             endSize: 0,
             life: 2.4,
-            particleShape: 'circle'
+            particleShape: 'circle',
+            blendMode: 'source-over'
         }
     },
     confettiExplosion: {
@@ -166,7 +175,8 @@ export const presets = {
             startSize: 3,
             endSize: 1,
             life: 1.9,
-            particleShape: 'diamond'
+            particleShape: 'diamond',
+            blendMode: 'lighter'
         }
     },
     soulAscend: {
@@ -183,7 +193,8 @@ export const presets = {
             startSize: 5,
             endSize: 0,
             life: 3.8,
-            particleShape: 'star'
+            particleShape: 'star',
+            blendMode: 'lighter'
         }
     },
     meteorImpact: {
@@ -200,7 +211,8 @@ export const presets = {
             startSize: 7,
             endSize: 0,
             life: 1.05,
-            particleShape: 'square'
+            particleShape: 'square',
+            blendMode: 'lighter'
         }
     },
     electricOrb: {
@@ -217,7 +229,8 @@ export const presets = {
             startSize: 4,
             endSize: 1,
             life: 1.65,
-            particleShape: 'plus'
+            particleShape: 'plus',
+            blendMode: 'lighter'
         }
     },
     poisonCloud: {
@@ -234,7 +247,8 @@ export const presets = {
             startSize: 13,
             endSize: 3,
             life: 4.4,
-            particleShape: 'circle'
+            particleShape: 'circle',
+            blendMode: 'source-over'
         }
     },
     holyLight: {
@@ -251,7 +265,8 @@ export const presets = {
             startSize: 6,
             endSize: 1,
             life: 3.4,
-            particleShape: 'star'
+            particleShape: 'star',
+            blendMode: 'lighter'
         }
     },
     blizzard: {
@@ -268,7 +283,8 @@ export const presets = {
             startSize: 3,
             endSize: 1,
             life: 3.5,
-            particleShape: 'circle'
+            particleShape: 'circle',
+            blendMode: 'source-over'
         }
     },
     lavaBurst: {
@@ -285,7 +301,8 @@ export const presets = {
             startSize: 6,
             endSize: 1,
             life: 1.2,
-            particleShape: 'circle'
+            particleShape: 'circle',
+            blendMode: 'lighter'
         }
     },
     shadowTendrils: {
@@ -302,7 +319,8 @@ export const presets = {
             startSize: 5,
             endSize: 1,
             life: 5.0,
-            particleShape: 'cross'
+            particleShape: 'cross',
+            blendMode: 'source-over'
         }
     },
     fairyDust: {
@@ -319,7 +337,8 @@ export const presets = {
             startSize: 4,
             endSize: 1,
             life: 4.0,
-            particleShape: 'star'
+            particleShape: 'star',
+            blendMode: 'lighter'
         }
     },
     shockwaveRing: {
@@ -336,7 +355,8 @@ export const presets = {
             startSize: 4,
             endSize: 0,
             life: 0.45,
-            particleShape: 'diamond'
+            particleShape: 'diamond',
+            blendMode: 'lighter'
         }
     },
     dragonBreath: {
@@ -353,7 +373,8 @@ export const presets = {
             startSize: 6,
             endSize: 1,
             life: 1.8,
-            particleShape: 'circle'
+            particleShape: 'circle',
+            blendMode: 'lighter'
         }
     },
     portalSwirl: {
@@ -370,7 +391,8 @@ export const presets = {
             startSize: 4,
             endSize: 1,
             life: 3.0,
-            particleShape: 'plus'
+            particleShape: 'plus',
+            blendMode: 'lighter'
         }
     },
     rainDrops: {
@@ -387,7 +409,8 @@ export const presets = {
             startSize: 2,
             endSize: 1,
             life: 0.7,
-            particleShape: 'square'
+            particleShape: 'square',
+            blendMode: 'source-over'
         }
     },
     toxicGeyser: {
@@ -404,7 +427,8 @@ export const presets = {
             startSize: 5,
             endSize: 1,
             life: 2.2,
-            particleShape: 'circle'
+            particleShape: 'circle',
+            blendMode: 'lighter'
         }
     },
     crystalShatter: {
@@ -421,7 +445,8 @@ export const presets = {
             startSize: 5,
             endSize: 0,
             life: 0.55,
-            particleShape: 'diamond'
+            particleShape: 'diamond',
+            blendMode: 'lighter'
         }
     }
 };

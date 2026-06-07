@@ -19,6 +19,12 @@ const exportHelp = document.querySelector('#exportHelp');
 const loopModeToggle = document.querySelector('#loopModeToggle');
 const exportAtlasBtn = document.querySelector('#exportAtlasBtn');
 const downloadBtn = document.querySelector('#downloadBtn');
+const exportGifBtn = document.querySelector('#exportGifBtn');
+const copyConfigBtn = document.querySelector('#copyConfigBtn');
+const presetSearch = document.querySelector('#presetSearch');
+const blendModeSelect = document.querySelector('#blendModeSelect');
+const playbackSpeedRange = document.querySelector('#playbackSpeedRange');
+const playbackSpeedNumber = document.querySelector('#playbackSpeedNumber');
 
 const VIEWPORT_SIZE = 480;
 const CAPTURE_STEP = 1 / 60;
@@ -288,6 +294,11 @@ const syncUiFromConfig = () => {
         const value = getByPath(activeConfig, input.dataset.text);
         input.value = Array.isArray(value) ? value.join(', ') : value;
     });
+
+    if (blendModeSelect) {
+        blendModeSelect.value = activeConfig.blendMode || 'source-over';
+        renderer.setBlendMode(blendModeSelect.value);
+    }
 };
 
 const randomInRange = (min, max, step) => {
@@ -450,6 +461,97 @@ const exportAtlas = async () => {
     flashButton(exportAtlasBtn, '✓ Atlas Saved');
 };
 
+let draggingOrigin = false;
+
+const updateOriginFromEvent = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    emitter.originX = (event.clientX - rect.left) * scaleX;
+    emitter.originY = (event.clientY - rect.top) * scaleY;
+};
+
+const bindCanvasDrag = () => {
+    canvas.addEventListener('pointerdown', (event) => {
+        draggingOrigin = true;
+        updateOriginFromEvent(event);
+    });
+    canvas.addEventListener('pointermove', (event) => {
+        if (!draggingOrigin) return;
+        updateOriginFromEvent(event);
+    });
+    canvas.addEventListener('pointerup', () => {
+        draggingOrigin = false;
+    });
+    canvas.addEventListener('pointerleave', () => {
+        draggingOrigin = false;
+    });
+};
+
+const blobToImageData = async (blob, size) => {
+    const bitmap = await createImageBitmap(blob);
+    const offscreen = document.createElement('canvas');
+    offscreen.width = size;
+    offscreen.height = size;
+    const ctx = offscreen.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    return ctx.getImageData(0, 0, size, size);
+};
+
+const exportGif = async () => {
+    exportGifBtn.disabled = true;
+    const { frames, frameCount, size } = await captureFrameSequence();
+
+    const gif = new GIF({
+        workers: 2,
+        quality: 10,
+        width: size,
+        height: size,
+        transparent: 0x00000000
+    });
+
+    const delay = Math.round(1000 / frameCount * activeConfig.visuals.life);
+
+    for (const frame of frames) {
+        const imageData = await blobToImageData(frame, size);
+        gif.addFrame(imageData, { delay });
+    }
+
+    gif.on('finished', (blob) => {
+        const url = URL.createObjectURL(blob);
+        const presetName = sanitizeFilenamePart(activeConfig.name || activePresetKey);
+        const timestamp = formatTimestamp();
+        downloadUrl(url, `animated-${presetName}-${timestamp}.gif`);
+        URL.revokeObjectURL(url);
+        flashButton(exportGifBtn, '✓ GIF Saved');
+    });
+
+    gif.render();
+};
+
+const filterPresets = () => {
+    const query = presetSearch.value.trim().toLowerCase();
+    const options = Array.from(presetSelect.options);
+    const visible = [];
+
+    options.forEach((option) => {
+        const matches = option.textContent.toLowerCase().includes(query);
+        option.hidden = !matches;
+        if (matches) visible.push(option);
+    });
+
+    if (visible.length === 1) {
+        presetSelect.value = visible[0].value;
+        loadPreset(visible[0].value);
+    }
+};
+
+const copyConfigJson = () => {
+    navigator.clipboard.writeText(JSON.stringify(activeConfig, null, 2));
+    flashButton(copyConfigBtn, '✓ Copied!');
+};
+
 const bindActions = () => {
     document.querySelector('#loadPresetBtn').addEventListener('click', () => loadPreset(presetSelect.value));
     presetSelect.addEventListener('change', () => loadPreset(presetSelect.value));
@@ -469,12 +571,31 @@ const bindActions = () => {
     frameCountInput.addEventListener('input', updateRecordButtonLabel);
     showTargetToggle.addEventListener('change', () => renderer.setShowTarget(showTargetToggle.checked));
     autoPlayToggle.addEventListener('change', () => renderer.setContinuous(autoPlayToggle.checked));
+
+    exportGifBtn.addEventListener('click', exportGif);
+    copyConfigBtn.addEventListener('click', copyConfigJson);
+    presetSearch.addEventListener('input', filterPresets);
+
+    blendModeSelect.addEventListener('change', () => {
+        activeConfig.blendMode = blendModeSelect.value;
+        renderer.setBlendMode(blendModeSelect.value);
+    });
+
+    const syncPlaybackSpeed = (value) => {
+        const clamped = Math.min(3.0, Math.max(0.1, Number(value) || 1));
+        playbackSpeedRange.value = clamped;
+        playbackSpeedNumber.value = clamped;
+        renderer.setTimeScale(clamped);
+    };
+    playbackSpeedRange.addEventListener('input', () => syncPlaybackSpeed(playbackSpeedRange.value));
+    playbackSpeedNumber.addEventListener('input', () => syncPlaybackSpeed(playbackSpeedNumber.value));
 };
 
 populatePresets();
 bindControlRows();
 bindSimpleInputs();
 bindActions();
+bindCanvasDrag();
 syncUiFromConfig();
 updateRecordButtonLabel();
 updateCanvasMetadata();
