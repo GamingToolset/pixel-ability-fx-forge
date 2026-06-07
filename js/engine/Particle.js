@@ -103,7 +103,10 @@ export default class Particle {
         vortexPull,
         shape,
         canvasWidth,
-        canvasHeight
+        canvasHeight,
+        turbulence,
+        rotation,
+        rotationSpeed
     }) {
         this.x = x;
         this.y = y;
@@ -124,6 +127,9 @@ export default class Particle {
         this.shape = shape || 'square';
         this.canvasWidth = canvasWidth || 160;
         this.canvasHeight = canvasHeight || 160;
+        this.turbulence = turbulence || 0;
+        this.rotation = rotation || 0;
+        this.rotationSpeed = rotationSpeed || 0;
         this.alive = true;
     }
 
@@ -141,12 +147,16 @@ export default class Particle {
         this.vx += -ny * this.orbitalVelocity * deltaTime;
         this.vy += nx * this.orbitalVelocity * deltaTime;
 
+        this.vx += (Math.random() - 0.5) * this.turbulence * deltaTime * 60;
+        this.vy += (Math.random() - 0.5) * this.turbulence * deltaTime * 60;
+
         const dragFactor = Math.pow(this.drag, frameScale);
         this.vx *= dragFactor;
         this.vy *= dragFactor;
 
         this.x += this.vx * deltaTime;
         this.y += this.vy * deltaTime;
+        this.rotation += this.rotationSpeed * deltaTime;
         this.life -= deltaTime;
 
         if (this.life <= 0) {
@@ -169,7 +179,13 @@ export default class Particle {
 
         context.globalAlpha = fadeOut * boundaryAlpha;
         context.fillStyle = mixColor(this.startColor, this.endColor, normalizedAge);
-        drawShape(context, this.x, this.y, size, this.shape);
+
+        context.save();
+        context.translate(this.x, this.y);
+        context.rotate(this.rotation);
+        drawShape(context, 0, 0, size, this.shape);
+        context.restore();
+
         context.globalAlpha = 1;
     }
 }

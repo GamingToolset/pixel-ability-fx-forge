@@ -27,7 +27,8 @@ export const defaultEmitterConfig = {
     },
     forces: {
         orbitalVelocity: 0,
-        vortexPull: 0
+        vortexPull: 0,
+        turbulence: 0
     },
     visuals: {
         startColor: '#ffd166',
@@ -36,7 +37,8 @@ export const defaultEmitterConfig = {
         startSize: 5,
         endSize: 1,
         life: 1.25,
-        particleShape: 'square'
+        particleShape: 'square',
+        rotationSpeed: 0
     }
 };
 
@@ -143,7 +145,10 @@ export default class Emitter {
             vortexPull: forces.vortexPull,
             shape: visuals.particleShape || 'square',
             canvasWidth: this.bounds.width,
-            canvasHeight: this.bounds.height
+            canvasHeight: this.bounds.height,
+            turbulence: forces.turbulence,
+            rotation: 0,
+            rotationSpeed: visuals.rotationSpeed
         };
     }
 

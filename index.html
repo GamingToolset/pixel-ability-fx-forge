@@ -17,6 +17,8 @@
 
             <section class="tool-card">
                 <h2>Presets</h2>
+                <label class="field-label" for="presetSearch" title="Filter the preset list by name.">Filter</label>
+                <input id="presetSearch" class="text-input" type="text" placeholder="Filter presets…">
                 <label class="field-label" for="presetSelect" title="Choose a built-in effect preset to load.">Effect Library</label>
                 <select id="presetSelect" class="control-select"></select>
                 <button id="loadPresetBtn" class="button primary">Load Preset</button>
@@ -49,6 +51,11 @@
                     <input id="autoPlay" type="checkbox" checked>
                     <span>Continuous emission</span>
                 </label>
+                <div class="control-row" id="playbackSpeedRow">
+                    <label for="playbackSpeedRange" title="Multiplies simulation delta time; 1.0 is normal speed.">Playback Speed</label>
+                    <input id="playbackSpeedRange" type="range" min="0.1" max="3.0" step="0.05" value="1.0">
+                    <input id="playbackSpeedNumber" type="number" min="0.1" max="3.0" step="0.05" value="1.0">
+                </div>
                 <button id="randomizeBtn" class="button warm">Randomize</button>
                 <button id="resetBtn" class="button ghost">Reset Simulation</button>
             </section>
@@ -57,6 +64,7 @@
                 <h2>Export</h2>
                 <p id="exportHelp">Exports the internal transparent 160×160 canvas. The checkerboard is preview-only.</p>
                 <button id="downloadBtn" class="button success">Export PNG</button>
+                <button id="copyConfigBtn" class="button ghost">Copy Config JSON</button>
             </section>
 
             <section class="tool-card capture-card">
@@ -69,6 +77,7 @@
                 </label>
                 <button id="recordFramesBtn" class="button primary">Record 8 Frames</button>
                 <button id="exportAtlasBtn" class="button success">Export Atlas</button>
+                <button id="exportGifBtn" class="button warm">Export GIF</button>
             </section>
         </aside>
 
@@ -182,6 +191,10 @@
                             <label title="Radial force pulling particles toward (positive) or away from (negative) the emitter center.">Vortex Pull</label>
                             <input type="range"><input type="number">
                         </div>
+                        <div class="control-row" data-control="forces.turbulence" data-min="0" data-max="120" data-step="1">
+                            <label title="Random jitter force applied each frame — adds organic chaos to movement.">Turbulence</label>
+                            <input type="range"><input type="number">
+                        </div>
                     </div>
                 </details>
 
@@ -216,6 +229,17 @@
                             <label title="How many seconds a particle lives before being removed.">Lifetime</label>
                             <input type="range"><input type="number">
                         </div>
+                        <div class="control-row" data-control="visuals.rotationSpeed" data-min="-6" data-max="6" data-step="0.1">
+                            <label title="Angular spin speed in radians per second. Works best with asymmetric shapes like diamond, cross, star.">Rotation Speed</label>
+                            <input type="range"><input type="number">
+                        </div>
+                        <label class="field-label" for="blendModeSelect" title="How particle pixels combine with what's beneath them.">Blend Mode</label>
+                        <select id="blendModeSelect" class="control-select">
+                            <option value="source-over">Normal</option>
+                            <option value="lighter">Additive</option>
+                            <option value="multiply">Multiply</option>
+                            <option value="screen">Screen</option>
+                        </select>
                     </div>
                 </details>
             </div>
@@ -223,6 +247,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
