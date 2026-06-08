@@ -113,46 +113,84 @@ const flashButton = (button, message, duration = 1800) => {
     }, duration);
 };
 
+const advanceEmitterTo = (emitterInstance, state, targetOffset) => {
+    while (state.elapsed + CAPTURE_STEP <= targetOffset) {
+        emitterInstance.update(CAPTURE_STEP, true);
+        state.elapsed += CAPTURE_STEP;
+    }
+    const remainder = targetOffset - state.elapsed;
+    if (remainder > 1e-6) {
+        emitterInstance.update(remainder, true);
+        state.elapsed = targetOffset;
+    }
+};
+
 const captureFrameSequenceLoop = async () => {
     const frameCount = getFrameCount();
     const size = getCanvasSize();
     const T = Math.max(0.1, activeConfig.visuals.life);
 
-    const captureCanvas = document.createElement('canvas');
-    captureCanvas.width = size;
-    captureCanvas.height = size;
-    const ctx = captureCanvas.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
+    const canvasA = document.createElement('canvas');
+    const canvasB = document.createElement('canvas');
+    const compositeCanvas = document.createElement('canvas');
+    for (const c of [canvasA, canvasB, compositeCanvas]) {
+        c.width = size;
+        c.height = size;
+    }
+    const ctxA = canvasA.getContext('2d');
+    const ctxB = canvasB.getContext('2d');
+    const ctxC = compositeCanvas.getContext('2d');
+    for (const ctx of [ctxA, ctxB, ctxC]) {
+        ctx.imageSmoothingEnabled = false;
+    }
 
-    const captureEmitter = new Emitter(activeConfig, { width: size, height: size });
-    captureEmitter.reset();
+    // Emitter B is seeded T/2 ahead of emitter A so their cross-fade weights
+    // (sin² and cos² of the same phase) always sum to 1, giving a seamless wrap.
+    const emitterA = new Emitter(activeConfig, { width: size, height: size });
+    const emitterB = new Emitter(activeConfig, { width: size, height: size });
+    emitterA.reset();
+    emitterB.reset();
 
     const warmupTime = 2 * T;
     let t = 0;
     while (t < warmupTime) {
-        captureEmitter.update(CAPTURE_STEP, true);
+        emitterA.update(CAPTURE_STEP, true);
+        t += CAPTURE_STEP;
+    }
+    t = 0;
+    while (t < warmupTime + T / 2) {
+        emitterB.update(CAPTURE_STEP, true);
         t += CAPTURE_STEP;
     }
 
+    const stateA = { elapsed: 0 };
+    const stateB = { elapsed: T / 2 };
     const frames = [];
-    let elapsed = 0;
 
     for (let i = 0; i < frameCount; i++) {
         const targetOffset = (i * T) / frameCount;
 
-        while (elapsed + CAPTURE_STEP <= targetOffset) {
-            captureEmitter.update(CAPTURE_STEP, true);
-            elapsed += CAPTURE_STEP;
-        }
-        const remainder = targetOffset - elapsed;
-        if (remainder > 1e-6) {
-            captureEmitter.update(remainder, true);
-            elapsed = targetOffset;
-        }
+        advanceEmitterTo(emitterA, stateA, targetOffset);
+        advanceEmitterTo(emitterB, stateB, targetOffset + T / 2);
 
-        ctx.clearRect(0, 0, size, size);
-        captureEmitter.draw(ctx);
-        frames.push(await canvasToBlob(captureCanvas));
+        ctxA.clearRect(0, 0, size, size);
+        emitterA.draw(ctxA);
+
+        ctxB.clearRect(0, 0, size, size);
+        emitterB.draw(ctxB);
+
+        const phase = i / frameCount;
+        const weightA = Math.sin(Math.PI * phase) ** 2;
+        const weightB = Math.cos(Math.PI * phase) ** 2; // weightA + weightB = 1.0 always
+
+        ctxC.clearRect(0, 0, size, size);
+        ctxC.globalAlpha = weightB;
+        ctxC.drawImage(canvasB, 0, 0);
+        ctxC.globalAlpha = weightA;
+        ctxC.drawImage(canvasA, 0, 0);
+        ctxC.globalAlpha = 1.0;
+
+        frames.push(await canvasToBlob(compositeCanvas));
     }
 
     return { frames, frameCount, size, loopMode: 'loop' };
