@@ -6,6 +6,7 @@ const canvas = document.querySelector('#fxCanvas');
 const presetSelect = document.querySelector('#presetSelect');
 const particleCount = document.querySelector('#particleCount');
 const showTargetToggle = document.querySelector('#showTarget');
+const showOriginDotToggle = document.querySelector('#showOriginDot');
 const autoPlayToggle = document.querySelector('#autoPlay');
 const canvasSizeSelect = document.querySelector('#canvasSizeSelect');
 const frameCountInput = document.querySelector('#frameCountInput');
@@ -40,11 +41,14 @@ let emitter = new Emitter(activeConfig, { width: canvas.width, height: canvas.he
 
 const renderer = new Renderer(canvas, emitter, {
     showTarget: showTargetToggle.checked,
+    showOriginDot: showOriginDotToggle.checked,
     continuous: autoPlayToggle.checked,
     onFrame: (count) => {
         particleCount.textContent = `${count} particle${count === 1 ? '' : 's'}`;
     }
 });
+
+showOriginDotToggle.addEventListener('change', () => renderer.setShowOriginDot(showOriginDotToggle.checked));
 
 const getByPath = (object, path) => pathParts(path).reduce((target, key) => target[key], object);
 
@@ -96,6 +100,8 @@ const getFrameCount = () => {
 };
 
 const getCanvasSize = () => canvas.width;
+
+renderer.setFramePreviewMode(true, getFrameCount(), activeConfig.visuals.life);
 
 const flashButton = (button, message, duration = 1800) => {
     const original = button.textContent;
@@ -238,6 +244,7 @@ const applyEmitterConfig = ({ reset = false } = {}) => {
         emitter.reset();
         emitter.burst(activeConfig.emission.burstAmount);
     }
+    renderer.markPreviewDirty();
 };
 
 const updateCanvasMetadata = () => {
@@ -263,6 +270,7 @@ const resizeCanvas = (size) => {
     updateCanvasMetadata();
     emitter.reset();
     emitter.burst(activeConfig.emission.burstAmount);
+    renderer.markPreviewDirty();
 };
 
 const syncControlRow = (row) => {
@@ -568,7 +576,11 @@ const bindActions = () => {
     exportAtlasBtn.addEventListener('click', exportAtlas);
     document.querySelector('#randomizeBtn').addEventListener('click', randomizeConfig);
     canvasSizeSelect.addEventListener('change', () => resizeCanvas(Number(canvasSizeSelect.value)));
-    frameCountInput.addEventListener('input', updateRecordButtonLabel);
+    frameCountInput.addEventListener('input', () => {
+        updateRecordButtonLabel();
+        renderer.setFramePreviewMode(true, getFrameCount(), activeConfig.visuals.life);
+        renderer.markPreviewDirty();
+    });
     showTargetToggle.addEventListener('change', () => renderer.setShowTarget(showTargetToggle.checked));
     autoPlayToggle.addEventListener('change', () => renderer.setContinuous(autoPlayToggle.checked));
 

@@ -261,7 +261,7 @@ p {
     border-bottom-width: 1px;
     border-radius: 18px;
     box-shadow: var(--shadow), 0 0 0 8px rgb(255 255 255 / 0.03);
-    padding: 18px;
+    padding: 0;
     transition: border-bottom-color 140ms ease, border-bottom-width 140ms ease;
 }
 

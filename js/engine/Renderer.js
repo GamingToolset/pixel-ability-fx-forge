@@ -1,3 +1,5 @@
+import Emitter from './Emitter.js';
+
 export default class Renderer {
     constructor(canvas, emitter, options = {}) {
         this.canvas = canvas;
@@ -5,12 +7,21 @@ export default class Renderer {
         this.context.imageSmoothingEnabled = false;
         this.emitter = emitter;
         this.showTarget = options.showTarget ?? true;
+        this.showOriginDot = options.showOriginDot ?? true;
         this.continuous = options.continuous ?? true;
         this.lastTime = 0;
         this.running = false;
         this.onFrame = options.onFrame || (() => {});
         this.blendMode = 'source-over';
         this.timeScale = 1.0;
+
+        this.framePreviewMode = false;
+        this.frameCount = 8;
+        this.frameDuration = 1.25;
+        this.previewTime = 0;
+        this._previewFrames = null;
+        this._previewDirty = true;
+        this._rebuilding = false;
     }
 
     start() {
@@ -25,18 +36,105 @@ export default class Renderer {
         const deltaTime = (Math.min((time - this.lastTime) / 1000 || 0, 1 / 30)) * this.timeScale;
         this.lastTime = time;
 
-        this.clear();
-        this.drawTargetDummy();
-        this.drawViewportGuides();
-        this.emitter.update(deltaTime, this.continuous);
+        if (this.framePreviewMode) {
+            this.clear();
 
-        this.context.globalCompositeOperation = this.blendMode;
-        this.emitter.draw(this.context);
-        this.context.globalCompositeOperation = 'source-over';
+            if (this._previewDirty && !this._rebuilding) {
+                this._rebuildPreviewFrames();
+            }
 
-        this.onFrame(this.emitter.particles.length);
+            if (this._previewFrames && this._previewFrames.length === this.frameCount) {
+                this.previewTime += deltaTime;
+                if (this.previewTime >= this.frameDuration) {
+                    this.previewTime -= this.frameDuration;
+                }
+                let frameIndex = Math.floor((this.previewTime / this.frameDuration) * this.frameCount);
+                frameIndex = Math.min(this.frameCount - 1, Math.max(0, frameIndex));
+                this.context.putImageData(this._previewFrames[frameIndex], 0, 0);
+                this.onFrame(this.emitter.particles.length);
+            }
+
+            this.drawTargetDummy();
+            this.drawViewportGuides();
+
+            if (this._rebuilding) {
+                this._drawPreviewBuildingOverlay();
+            }
+        } else {
+            this.clear();
+            this.drawTargetDummy();
+            this.drawViewportGuides();
+            this.emitter.update(deltaTime, this.continuous);
+
+            this.context.globalCompositeOperation = this.blendMode;
+            this.emitter.draw(this.context);
+            this.context.globalCompositeOperation = 'source-over';
+
+            this.onFrame(this.emitter.particles.length);
+        }
 
         requestAnimationFrame((nextTime) => this.loop(nextTime));
+    }
+
+    _drawPreviewBuildingOverlay() {
+        const context = this.context;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const muted = getComputedStyle(this.canvas).getPropertyValue('--text-muted').trim() || '#9aa3b2';
+
+        context.save();
+        context.fillStyle = muted;
+        context.font = '10px sans-serif';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText('⟳ Building preview…', w / 2, h / 2);
+        context.restore();
+    }
+
+    async _rebuildPreviewFrames() {
+        this._rebuilding = true;
+        this._previewDirty = false;
+
+        const { frameCount, frameDuration } = this;
+        const size = this.canvas.width;
+        const STEP = 1 / 60;
+
+        const offscreen = document.createElement('canvas');
+        offscreen.width = size;
+        offscreen.height = size;
+        const ctx = offscreen.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+
+        const captureEmitter = new Emitter(this.emitter.config, { width: size, height: size });
+        captureEmitter.reset();
+
+        let t = 0;
+        const warmup = 2 * frameDuration;
+        while (t < warmup) {
+            captureEmitter.update(STEP, true);
+            t += STEP;
+        }
+
+        const frames = [];
+        let elapsed = 0;
+        for (let i = 0; i < frameCount; i++) {
+            const targetOffset = (i * frameDuration) / frameCount;
+            while (elapsed + STEP <= targetOffset) {
+                captureEmitter.update(STEP, true);
+                elapsed += STEP;
+            }
+            const rem = targetOffset - elapsed;
+            if (rem > 1e-6) {
+                captureEmitter.update(rem, true);
+                elapsed = targetOffset;
+            }
+            ctx.clearRect(0, 0, size, size);
+            captureEmitter.draw(ctx);
+            frames.push(ctx.getImageData(0, 0, size, size));
+        }
+
+        this._previewFrames = frames;
+        this._rebuilding = false;
     }
 
     clear() {
@@ -51,6 +149,10 @@ export default class Renderer {
         this.showTarget = value;
     }
 
+    setShowOriginDot(value) {
+        this.showOriginDot = value;
+    }
+
     setContinuous(value) {
         this.continuous = value;
     }
@@ -61,6 +163,17 @@ export default class Renderer {
 
     setTimeScale(value) {
         this.timeScale = value;
+    }
+
+    setFramePreviewMode(enabled, frameCount, frameDuration) {
+        this.framePreviewMode = enabled;
+        if (frameCount !== undefined) this.frameCount = frameCount;
+        if (frameDuration !== undefined) this.frameDuration = frameDuration;
+        this.markPreviewDirty();
+    }
+
+    markPreviewDirty() {
+        this._previewDirty = true;
     }
 
     exportPng(filename = `pixel-fx-${Date.now()}.png`) {
@@ -126,10 +239,12 @@ export default class Renderer {
         context.setLineDash([]);
         context.restore();
 
-        const accent = getComputedStyle(this.canvas).getPropertyValue('--accent').trim() || '#32d7ff';
-        const ox = Math.round(this.emitter.originX);
-        const oy = Math.round(this.emitter.originY);
-        context.fillStyle = accent;
-        context.fillRect(ox - 1, oy - 1, 3, 3);
+        if (this.showOriginDot) {
+            const accent = getComputedStyle(this.canvas).getPropertyValue('--accent').trim() || '#32d7ff';
+            const ox = Math.round(this.emitter.originX);
+            const oy = Math.round(this.emitter.originY);
+            context.fillStyle = accent;
+            context.fillRect(ox - 1, oy - 1, 3, 3);
+        }
     }
 }
