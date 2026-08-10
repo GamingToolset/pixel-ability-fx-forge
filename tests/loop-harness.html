@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Seamless loop verification</title>
+</head>
+<body data-status="running">
+    <pre id="result">Running loop verification…</pre>
+    <script type="module">
+        import { presets } from '../js/presets.js';
+        import { createLoopModel, drawLoopPhase } from '../js/engine/LoopFrames.js';
+
+        const size = 160;
+        const frameCount = 8;
+        const model = createLoopModel(presets.fireball, { width: size, height: size });
+
+        const render = (phase) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const context = canvas.getContext('2d');
+            drawLoopPhase(context, model, phase);
+            return context.getImageData(0, 0, size, size).data;
+        };
+
+        const difference = (left, right) => {
+            let total = 0;
+            for (let index = 0; index < left.length; index += 1) {
+                total += Math.abs(left[index] - right[index]);
+            }
+            return total / left.length;
+        };
+
+        const frames = Array.from({ length: frameCount }, (_, index) => render(index / frameCount));
+        const transitions = frames.map((frame, index) => difference(frame, frames[(index + 1) % frameCount]));
+        const exactPeriodDifference = difference(frames[0], render(1));
+        const meanTransition = transitions.reduce((sum, value) => sum + value, 0) / transitions.length;
+        const wrapDifference = transitions.at(-1);
+        const wrapRatio = meanTransition === 0 ? 0 : wrapDifference / meanTransition;
+        const passed = exactPeriodDifference === 0 && wrapRatio < 1.6;
+        const result = {
+            passed,
+            frameCount,
+            particleCount: model.particles.length,
+            exactPeriodDifference,
+            meanTransition: Number(meanTransition.toFixed(4)),
+            wrapDifference: Number(wrapDifference.toFixed(4)),
+            wrapRatio: Number(wrapRatio.toFixed(4)),
+            transitions: transitions.map((value) => Number(value.toFixed(4)))
+        };
+
+        document.body.dataset.status = passed ? 'passed' : 'failed';
+        document.querySelector('#result').textContent = JSON.stringify(result, null, 2);
+    </script>
+</body>
+</html>

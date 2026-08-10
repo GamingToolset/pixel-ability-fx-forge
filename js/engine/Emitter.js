@@ -1,7 +1,19 @@
 import Particle from './Particle.js';
 
-const random = (min, max) => min + Math.random() * (max - min);
+const randomBetween = (randomSource, min, max) => min + randomSource() * (max - min);
 const degToRad = (degrees) => degrees * Math.PI / 180;
+
+export const createSeededRandom = (seed = 0x9e3779b9) => {
+    let state = seed >>> 0;
+
+    return () => {
+        state += 0x6d2b79f5;
+        let value = state;
+        value = Math.imul(value ^ value >>> 15, value | 1);
+        value ^= value + Math.imul(value ^ value >>> 7, value | 61);
+        return ((value ^ value >>> 14) >>> 0) / 4294967296;
+    };
+};
 
 export const defaultEmitterConfig = {
     emission: {
@@ -38,7 +50,9 @@ export const defaultEmitterConfig = {
         endSize: 1,
         life: 1.25,
         particleShape: 'square',
-        rotationSpeed: 0
+        rotationSpeed: 0,
+        renderStyle: 'luminous',
+        coreStyle: 'none'
     }
 };
 
@@ -61,13 +75,16 @@ const deepMerge = (base, override) => {
     return result;
 };
 
+export const mergeEmitterConfig = (config) => deepMerge(defaultEmitterConfig, config);
+
 export default class Emitter {
-    constructor(config = defaultEmitterConfig, bounds = { width: 160, height: 160 }) {
+    constructor(config = defaultEmitterConfig, bounds = { width: 160, height: 160 }, options = {}) {
         this.bounds = bounds;
         this.originX = bounds.width / 2;
         this.originY = bounds.height / 2;
         this.particles = [];
         this.accumulator = 0;
+        this.random = options.random || Math.random;
         this.setConfig(config);
     }
 
@@ -123,9 +140,10 @@ export default class Emitter {
         const visuals = this.config.visuals;
         const physics = this.config.physics;
         const forces = this.config.forces;
-        const angle = degToRad(movement.angle + random(-movement.spread / 2, movement.spread / 2));
-        const velocity = random(movement.minVelocity, movement.maxVelocity);
+        const angle = degToRad(movement.angle + randomBetween(this.random, -movement.spread / 2, movement.spread / 2));
+        const velocity = randomBetween(this.random, movement.minVelocity, movement.maxVelocity);
         const paletteColor = this.pickPaletteColor();
+        const directionalShape = ['flame', 'shard'].includes(visuals.particleShape);
 
         return {
             x: position.x,
@@ -147,15 +165,18 @@ export default class Emitter {
             canvasWidth: this.bounds.width,
             canvasHeight: this.bounds.height,
             turbulence: forces.turbulence,
-            rotation: 0,
-            rotationSpeed: visuals.rotationSpeed
+            rotation: directionalShape ? angle + Math.PI / 2 : 0,
+            rotationSpeed: visuals.rotationSpeed,
+            renderStyle: visuals.renderStyle,
+            random: this.random,
+            detailSeed: Math.floor(this.random() * 0xffffffff)
         };
     }
 
     pickPaletteColor() {
         const palette = this.config.visuals.palette;
         if (!Array.isArray(palette) || palette.length === 0) return null;
-        return palette[Math.floor(Math.random() * palette.length)];
+        return palette[Math.floor(this.random() * palette.length)];
     }
 
     randomPosition() {
@@ -164,13 +185,13 @@ export default class Emitter {
 
         if (shape.type === 'box') {
             return {
-                x: center.x + random(-shape.width / 2, shape.width / 2),
-                y: center.y + random(-shape.height / 2, shape.height / 2)
+                x: center.x + randomBetween(this.random, -shape.width / 2, shape.width / 2),
+                y: center.y + randomBetween(this.random, -shape.height / 2, shape.height / 2)
             };
         }
 
         if (shape.type === 'ring') {
-            const angle = random(0, Math.PI * 2);
+            const angle = randomBetween(this.random, 0, Math.PI * 2);
             return {
                 x: center.x + Math.cos(angle) * shape.radius,
                 y: center.y + Math.sin(angle) * shape.radius
@@ -178,8 +199,8 @@ export default class Emitter {
         }
 
         if (shape.type === 'circle') {
-            const angle = random(0, Math.PI * 2);
-            const radius = Math.sqrt(Math.random()) * shape.radius;
+            const angle = randomBetween(this.random, 0, Math.PI * 2);
+            const radius = Math.sqrt(this.random()) * shape.radius;
             return {
                 x: center.x + Math.cos(angle) * radius,
                 y: center.y + Math.sin(angle) * radius

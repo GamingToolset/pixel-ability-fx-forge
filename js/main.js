@@ -1,5 +1,6 @@
-import Emitter from './engine/Emitter.js';
+import Emitter, { mergeEmitterConfig } from './engine/Emitter.js';
 import Renderer from './engine/Renderer.js';
+import { renderSeamlessLoopFrames } from './engine/LoopFrames.js';
 import { presets } from './presets.js';
 
 const canvas = document.querySelector('#fxCanvas');
@@ -30,13 +31,13 @@ const playbackSpeedNumber = document.querySelector('#playbackSpeedNumber');
 const VIEWPORT_SIZE = 480;
 const CAPTURE_STEP = 1 / 60;
 
-const PARTICLE_SHAPES = ['square', 'circle', 'diamond', 'cross', 'plus', 'star', 'pixel-cluster'];
+const PARTICLE_SHAPES = ['square', 'circle', 'diamond', 'cross', 'plus', 'star', 'spark', 'flame', 'shard', 'pixel-cluster'];
 
 const clone = (value) => structuredClone(value);
 const pathParts = (path) => path.split('.');
 
 let activePresetKey = 'fireball';
-let activeConfig = clone(presets[activePresetKey]);
+let activeConfig = mergeEmitterConfig(presets[activePresetKey]);
 let emitter = new Emitter(activeConfig, { width: canvas.width, height: canvas.height });
 
 const renderer = new Renderer(canvas, emitter, {
@@ -113,85 +114,16 @@ const flashButton = (button, message, duration = 1800) => {
     }, duration);
 };
 
-const advanceEmitterTo = (emitterInstance, state, targetOffset) => {
-    while (state.elapsed + CAPTURE_STEP <= targetOffset) {
-        emitterInstance.update(CAPTURE_STEP, true);
-        state.elapsed += CAPTURE_STEP;
-    }
-    const remainder = targetOffset - state.elapsed;
-    if (remainder > 1e-6) {
-        emitterInstance.update(remainder, true);
-        state.elapsed = targetOffset;
-    }
-};
-
 const captureFrameSequenceLoop = async () => {
     const frameCount = getFrameCount();
     const size = getCanvasSize();
-    const T = Math.max(0.1, activeConfig.visuals.life);
-
-    const canvasA = document.createElement('canvas');
-    const canvasB = document.createElement('canvas');
-    const compositeCanvas = document.createElement('canvas');
-    for (const c of [canvasA, canvasB, compositeCanvas]) {
-        c.width = size;
-        c.height = size;
-    }
-    const ctxA = canvasA.getContext('2d');
-    const ctxB = canvasB.getContext('2d');
-    const ctxC = compositeCanvas.getContext('2d');
-    for (const ctx of [ctxA, ctxB, ctxC]) {
-        ctx.imageSmoothingEnabled = false;
-    }
-
-    // Emitter B is seeded T/2 ahead of emitter A so their cross-fade weights
-    // (sin² and cos² of the same phase) always sum to 1, giving a seamless wrap.
-    const emitterA = new Emitter(activeConfig, { width: size, height: size });
-    const emitterB = new Emitter(activeConfig, { width: size, height: size });
-    emitterA.reset();
-    emitterB.reset();
-
-    const warmupTime = 2 * T;
-    let t = 0;
-    while (t < warmupTime) {
-        emitterA.update(CAPTURE_STEP, true);
-        t += CAPTURE_STEP;
-    }
-    t = 0;
-    while (t < warmupTime + T / 2) {
-        emitterB.update(CAPTURE_STEP, true);
-        t += CAPTURE_STEP;
-    }
-
-    const stateA = { elapsed: 0 };
-    const stateB = { elapsed: T / 2 };
-    const frames = [];
-
-    for (let i = 0; i < frameCount; i++) {
-        const targetOffset = (i * T) / frameCount;
-
-        advanceEmitterTo(emitterA, stateA, targetOffset);
-        advanceEmitterTo(emitterB, stateB, targetOffset + T / 2);
-
-        ctxA.clearRect(0, 0, size, size);
-        emitterA.draw(ctxA);
-
-        ctxB.clearRect(0, 0, size, size);
-        emitterB.draw(ctxB);
-
-        const phase = i / frameCount;
-        const weightA = Math.sin(Math.PI * phase) ** 2;
-        const weightB = Math.cos(Math.PI * phase) ** 2; // weightA + weightB = 1.0 always
-
-        ctxC.clearRect(0, 0, size, size);
-        ctxC.globalAlpha = weightB;
-        ctxC.drawImage(canvasB, 0, 0);
-        ctxC.globalAlpha = weightA;
-        ctxC.drawImage(canvasA, 0, 0);
-        ctxC.globalAlpha = 1.0;
-
-        frames.push(await canvasToBlob(compositeCanvas));
-    }
+    const { frames: frameCanvases } = await renderSeamlessLoopFrames({
+        config: activeConfig,
+        width: size,
+        height: size,
+        frameCount
+    });
+    const frames = await Promise.all(frameCanvases.map(canvasToBlob));
 
     return { frames, frameCount, size, loopMode: 'loop' };
 };
@@ -342,7 +274,7 @@ const syncUiFromConfig = () => {
     });
 
     if (blendModeSelect) {
-        blendModeSelect.value = activeConfig.blendMode || 'source-over';
+        blendModeSelect.value = activeConfig.visuals.blendMode || activeConfig.blendMode || 'source-over';
         renderer.setBlendMode(blendModeSelect.value);
     }
 };
@@ -469,7 +401,7 @@ const populatePresets = () => {
 const loadPreset = (key) => {
     if (!presets[key]) return;
     activePresetKey = key;
-    activeConfig = clone(presets[key]);
+    activeConfig = mergeEmitterConfig(presets[key]);
     syncUiFromConfig();
     applyEmitterConfig({ reset: true });
 };
@@ -627,8 +559,9 @@ const bindActions = () => {
     presetSearch.addEventListener('input', filterPresets);
 
     blendModeSelect.addEventListener('change', () => {
-        activeConfig.blendMode = blendModeSelect.value;
+        activeConfig.visuals.blendMode = blendModeSelect.value;
         renderer.setBlendMode(blendModeSelect.value);
+        renderer.markPreviewDirty();
     });
 
     const syncPlaybackSpeed = (value) => {

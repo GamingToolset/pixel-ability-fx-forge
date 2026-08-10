@@ -9,12 +9,14 @@ export const presets = {
         visuals: {
             startColor: '#fff7b1',
             endColor: '#b31212',
-            palette: ['#ffffff', '#ffe66d', '#ff9f1c', '#ff4d00'],
-            startSize: 7,
+            palette: ['#fff4a3', '#ffd34e', '#ff981f', '#f04b18'],
+            startSize: 8,
             endSize: 1,
             life: 1.15,
-            particleShape: 'circle',
-            blendMode: 'lighter'
+            particleShape: 'flame',
+            renderStyle: 'luminous',
+            coreStyle: 'orb',
+            blendMode: 'source-over'
         }
     },
     frostNova: {
@@ -32,6 +34,7 @@ export const presets = {
             endSize: 1,
             life: 1.8,
             particleShape: 'diamond',
+            coreStyle: 'ring',
             blendMode: 'lighter'
         }
     },
@@ -50,6 +53,7 @@ export const presets = {
             endSize: 0,
             life: 2.25,
             particleShape: 'square',
+            coreStyle: 'ring',
             blendMode: 'lighter'
         }
     },
@@ -86,6 +90,7 @@ export const presets = {
             endSize: 1,
             life: 2.8,
             particleShape: 'star',
+            coreStyle: 'ring',
             blendMode: 'lighter'
         }
     },
@@ -122,6 +127,7 @@ export const presets = {
             endSize: 1,
             life: 3.2,
             particleShape: 'plus',
+            coreStyle: 'orb',
             blendMode: 'lighter'
         }
     },
@@ -140,6 +146,7 @@ export const presets = {
             endSize: 1,
             life: 0.95,
             particleShape: 'pixel-cluster',
+            renderStyle: 'shaded',
             blendMode: 'lighter'
         }
     },
@@ -158,6 +165,7 @@ export const presets = {
             endSize: 0,
             life: 2.4,
             particleShape: 'circle',
+            renderStyle: 'shaded',
             blendMode: 'source-over'
         }
     },
@@ -176,6 +184,7 @@ export const presets = {
             endSize: 1,
             life: 1.9,
             particleShape: 'diamond',
+            renderStyle: 'shaded',
             blendMode: 'lighter'
         }
     },
@@ -194,6 +203,7 @@ export const presets = {
             endSize: 0,
             life: 3.8,
             particleShape: 'star',
+            coreStyle: 'orb',
             blendMode: 'lighter'
         }
     },
@@ -208,10 +218,11 @@ export const presets = {
             startColor: '#fff3a3',
             endColor: '#4b4f56',
             palette: ['#fff6bd', '#ffd166', '#ff7a00', '#c94c1f', '#8c8f96', '#4b4f56'],
-            startSize: 7,
+            startSize: 9,
             endSize: 0,
             life: 1.05,
-            particleShape: 'square',
+            particleShape: 'shard',
+            renderStyle: 'luminous',
             blendMode: 'lighter'
         }
     },
@@ -230,6 +241,7 @@ export const presets = {
             endSize: 1,
             life: 1.65,
             particleShape: 'plus',
+            coreStyle: 'orb',
             blendMode: 'lighter'
         }
     },
@@ -248,6 +260,7 @@ export const presets = {
             endSize: 3,
             life: 4.4,
             particleShape: 'circle',
+            renderStyle: 'shaded',
             blendMode: 'source-over'
         }
     },
@@ -266,6 +279,7 @@ export const presets = {
             endSize: 1,
             life: 3.4,
             particleShape: 'star',
+            coreStyle: 'orb',
             blendMode: 'lighter'
         }
     },
@@ -301,7 +315,8 @@ export const presets = {
             startSize: 6,
             endSize: 1,
             life: 1.2,
-            particleShape: 'circle',
+            particleShape: 'flame',
+            renderStyle: 'luminous',
             blendMode: 'lighter'
         }
     },
@@ -320,6 +335,7 @@ export const presets = {
             endSize: 1,
             life: 5.0,
             particleShape: 'cross',
+            renderStyle: 'shaded',
             blendMode: 'source-over'
         }
     },
@@ -337,7 +353,8 @@ export const presets = {
             startSize: 4,
             endSize: 1,
             life: 4.0,
-            particleShape: 'star',
+            particleShape: 'spark',
+            renderStyle: 'luminous',
             blendMode: 'lighter'
         }
     },
@@ -356,6 +373,7 @@ export const presets = {
             endSize: 0,
             life: 0.45,
             particleShape: 'diamond',
+            coreStyle: 'ring',
             blendMode: 'lighter'
         }
     },
@@ -373,7 +391,8 @@ export const presets = {
             startSize: 6,
             endSize: 1,
             life: 1.8,
-            particleShape: 'circle',
+            particleShape: 'flame',
+            renderStyle: 'luminous',
             blendMode: 'lighter'
         }
     },
@@ -392,6 +411,7 @@ export const presets = {
             endSize: 1,
             life: 3.0,
             particleShape: 'plus',
+            coreStyle: 'ring',
             blendMode: 'lighter'
         }
     },
@@ -409,7 +429,8 @@ export const presets = {
             startSize: 2,
             endSize: 1,
             life: 0.7,
-            particleShape: 'square',
+            particleShape: 'shard',
+            renderStyle: 'shaded',
             blendMode: 'source-over'
         }
     },
@@ -445,7 +466,8 @@ export const presets = {
             startSize: 5,
             endSize: 0,
             life: 0.55,
-            particleShape: 'diamond',
+            particleShape: 'shard',
+            renderStyle: 'luminous',
             blendMode: 'lighter'
         }
     }

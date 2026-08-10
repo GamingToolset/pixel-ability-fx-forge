@@ -219,7 +219,22 @@
                             <option value="cross">Cross</option>
                             <option value="plus">Plus</option>
                             <option value="star">Star</option>
+                            <option value="spark">Radiant Spark</option>
+                            <option value="flame">Tapered Flame</option>
+                            <option value="shard">Energy Shard</option>
                             <option value="pixel-cluster">Pixel Cluster</option>
+                        </select>
+                        <label class="field-label" for="renderStyleSelect" title="Layered styles add a dark rim, body shading, highlights, glow, and short motion accents while keeping hard pixel edges.">Render Style</label>
+                        <select id="renderStyleSelect" class="control-select" data-select="visuals.renderStyle">
+                            <option value="flat">Flat</option>
+                            <option value="shaded">Shaded Pixel</option>
+                            <option value="luminous">Luminous Pixel</option>
+                        </select>
+                        <label class="field-label" for="coreStyleSelect" title="Adds a coherent shaded center or ring underneath the particles, useful for fireballs, portals, auras, and magic circles.">Effect Core</label>
+                        <select id="coreStyleSelect" class="control-select" data-select="visuals.coreStyle">
+                            <option value="none">None</option>
+                            <option value="orb">Shaded Orb</option>
+                            <option value="ring">Energy Ring</option>
                         </select>
                         <div class="control-row" data-control="visuals.startSize" data-min="1" data-max="18" data-step="1">
                             <label title="Pixel size of a particle when it spawns.">Start Size</label>

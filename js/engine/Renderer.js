@@ -1,4 +1,4 @@
-import Emitter from './Emitter.js';
+import { renderSeamlessLoopFrames } from './LoopFrames.js';
 
 export default class Renderer {
     constructor(canvas, emitter, options = {}) {
@@ -95,87 +95,23 @@ export default class Renderer {
         this._rebuilding = true;
         this._previewDirty = false;
 
-        const { frameCount, frameDuration: T } = this;
+        const { frameCount } = this;
         const size = this.canvas.width;
-        const STEP = 1 / 60;
 
-        const canvasA = document.createElement('canvas');
-        const canvasB = document.createElement('canvas');
-        const compositeCanvas = document.createElement('canvas');
-        for (const c of [canvasA, canvasB, compositeCanvas]) {
-            c.width = size;
-            c.height = size;
+        try {
+            const { frames } = await renderSeamlessLoopFrames({
+                config: this.emitter.config,
+                width: size,
+                height: size,
+                frameCount
+            });
+
+            this._previewFrames = frames.map((frameCanvas) => (
+                frameCanvas.getContext('2d').getImageData(0, 0, size, size)
+            ));
+        } finally {
+            this._rebuilding = false;
         }
-        const ctxA = canvasA.getContext('2d');
-        const ctxB = canvasB.getContext('2d');
-        const ctxC = compositeCanvas.getContext('2d');
-        for (const ctx of [ctxA, ctxB, ctxC]) {
-            ctx.imageSmoothingEnabled = false;
-        }
-
-        // Two emitters offset by T/2 so cross-fade weights (sin²/cos² of phase)
-        // always sum to 1, making the wrap from the last frame to frame 0 seamless.
-        const emitterA = new Emitter(this.emitter.config, { width: size, height: size });
-        const emitterB = new Emitter(this.emitter.config, { width: size, height: size });
-        emitterA.reset();
-        emitterB.reset();
-
-        const warmup = 2 * T;
-        let t = 0;
-        while (t < warmup) {
-            emitterA.update(STEP, true);
-            t += STEP;
-        }
-        t = 0;
-        while (t < warmup + T / 2) {
-            emitterB.update(STEP, true);
-            t += STEP;
-        }
-
-        const advanceTo = (emitterInstance, state, targetOffset) => {
-            while (state.elapsed + STEP <= targetOffset) {
-                emitterInstance.update(STEP, true);
-                state.elapsed += STEP;
-            }
-            const rem = targetOffset - state.elapsed;
-            if (rem > 1e-6) {
-                emitterInstance.update(rem, true);
-                state.elapsed = targetOffset;
-            }
-        };
-
-        const stateA = { elapsed: 0 };
-        const stateB = { elapsed: T / 2 };
-        const frames = [];
-
-        for (let i = 0; i < frameCount; i++) {
-            const targetOffset = (i * T) / frameCount;
-
-            advanceTo(emitterA, stateA, targetOffset);
-            advanceTo(emitterB, stateB, targetOffset + T / 2);
-
-            ctxA.clearRect(0, 0, size, size);
-            emitterA.draw(ctxA);
-
-            ctxB.clearRect(0, 0, size, size);
-            emitterB.draw(ctxB);
-
-            const phase = i / frameCount;
-            const weightA = Math.sin(Math.PI * phase) ** 2;
-            const weightB = Math.cos(Math.PI * phase) ** 2; // weightA + weightB = 1.0 always
-
-            ctxC.clearRect(0, 0, size, size);
-            ctxC.globalAlpha = weightB;
-            ctxC.drawImage(canvasB, 0, 0);
-            ctxC.globalAlpha = weightA;
-            ctxC.drawImage(canvasA, 0, 0);
-            ctxC.globalAlpha = 1.0;
-
-            frames.push(ctxC.getImageData(0, 0, size, size));
-        }
-
-        this._previewFrames = frames;
-        this._rebuilding = false;
     }
 
     clear() {
