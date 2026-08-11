@@ -2,39 +2,50 @@ import {
     AbilityEffect,
     EFFECT_FAMILIES,
     ELEMENTS,
+    FORMATIONS,
+    PARTICLE_KITS,
     POWER_LEVELS,
+    TEMPORAL_STYLES,
+    TRACE_STYLES,
     createEffectRecipe,
     randomSeed,
     renderEffectFrames
-} from './AbilityEffect.js?v=8';
+} from './AbilityEffect.js?v=9';
 
 const GIF_WORKER_URL = new URL('./gif.worker.js', import.meta.url).href;
+const GIF_TRANSPARENT_COLOR = 0x010203;
+const GIF_MATTE_COLOR = '#010203';
 
 const canvas = document.querySelector('#fxCanvas');
 const context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
 
-const familySelect = document.querySelector('#familySelect');
-const elementSelect = document.querySelector('#elementSelect');
-const powerSelect = document.querySelector('#powerSelect');
+const controls = {
+    family: document.querySelector('#familySelect'),
+    element: document.querySelector('#elementSelect'),
+    power: document.querySelector('#powerSelect'),
+    formation: document.querySelector('#formationSelect'),
+    secondaryFormation: document.querySelector('#secondaryFormationSelect'),
+    geometry: document.querySelector('#geometrySelect'),
+    secondaryGeometry: document.querySelector('#secondaryGeometrySelect'),
+    trace: document.querySelector('#traceSelect'),
+    secondaryTrace: document.querySelector('#secondaryTraceSelect'),
+    particleKit: document.querySelector('#particleKitSelect'),
+    flow: document.querySelector('#flowSelect'),
+    temporal: document.querySelector('#temporalSelect')
+};
+
 const seedInput = document.querySelector('#seedInput');
 const generateButton = document.querySelector('#generateBtn');
 const newSeedButton = document.querySelector('#newSeedBtn');
 const replayButton = document.querySelector('#replayBtn');
 const pauseButton = document.querySelector('#pauseBtn');
-const recipeName = document.querySelector('#recipeName');
 const recipeFamily = document.querySelector('#recipeFamily');
 const recipeElement = document.querySelector('#recipeElement');
-const recipeDescription = document.querySelector('#recipeDescription');
 const durationStat = document.querySelector('#durationStat');
 const particleStat = document.querySelector('#particleStat');
 const layerStat = document.querySelector('#layerStat');
 const symmetryStat = document.querySelector('#symmetryStat');
-const formationStat = document.querySelector('#formationStat');
-const geometryStat = document.querySelector('#geometryStat');
-const traceStat = document.querySelector('#traceStat');
-const particleStyleStat = document.querySelector('#particleStyleStat');
-const flowStat = document.querySelector('#flowStat');
 const paletteSwatches = document.querySelector('#paletteSwatches');
 const frameProgress = document.querySelector('#frameProgress');
 const stageLabel = document.querySelector('#stageLabel');
@@ -45,6 +56,13 @@ const atlasPreview = document.querySelector('#atlasPreview');
 const atlasPreviewShell = document.querySelector('#atlasPreviewShell');
 const notice = document.querySelector('#notice');
 
+const allGeometries = [...new Set(Object.values(FORMATIONS)
+    .flatMap((family) => Object.values(family))
+    .flatMap((formation) => formation.geometries))];
+const allFlows = [...new Set(Object.values(FORMATIONS)
+    .flatMap((family) => Object.values(family))
+    .flatMap((formation) => formation.flows))];
+
 let baseRecipe;
 let activeEffect;
 let startedAt = performance.now();
@@ -53,15 +71,78 @@ let playing = true;
 let noticeTimer;
 let seedInputTimer;
 
-const populateSelect = (select, entries, randomLabel) => {
-    select.replaceChildren(new Option(randomLabel, 'random'));
-    Object.entries(entries).forEach(([key, item]) => select.append(new Option(item.label, key)));
+const prettyLabel = (value) => String(value)
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/-/g, ' ')
+    .replace(/^./, (letter) => letter.toUpperCase());
+
+const setSelectOptions = (select, entries, value, firstOption) => {
+    select.replaceChildren();
+    if (firstOption) select.append(new Option(firstOption.label, firstOption.value));
+    entries.forEach(([key, label]) => select.append(new Option(label, key)));
+    select.value = value;
 };
 
-populateSelect(familySelect, EFFECT_FAMILIES, 'Surprise me');
-populateSelect(elementSelect, ELEMENTS, 'Any element');
-Object.entries(POWER_LEVELS).forEach(([key, item]) => powerSelect.append(new Option(item.label, key)));
-powerSelect.value = 'standard';
+const populateStaticControls = () => {
+    setSelectOptions(
+        controls.family,
+        Object.entries(EFFECT_FAMILIES).map(([key, item]) => [key, item.shortLabel]),
+        'burst'
+    );
+    setSelectOptions(
+        controls.element,
+        Object.entries(ELEMENTS).map(([key, item]) => [key, item.label]),
+        'arcane'
+    );
+    setSelectOptions(
+        controls.power,
+        Object.entries(POWER_LEVELS).map(([key, item]) => [key, item.label]),
+        'standard'
+    );
+    setSelectOptions(controls.geometry, allGeometries.map((key) => [key, prettyLabel(key)]), 'circle');
+    setSelectOptions(controls.secondaryGeometry, allGeometries.map((key) => [key, prettyLabel(key)]), 'ellipse');
+    setSelectOptions(controls.trace, TRACE_STYLES.map((key) => [key, prettyLabel(key)]), 'pixels');
+    setSelectOptions(controls.secondaryTrace, TRACE_STYLES.map((key) => [key, prettyLabel(key)]), 'dashes');
+    setSelectOptions(
+        controls.particleKit,
+        Object.keys(PARTICLE_KITS).map((key) => [key, prettyLabel(key)]),
+        'motes'
+    );
+    setSelectOptions(controls.flow, allFlows.map((key) => [key, prettyLabel(key)]), 'outward');
+    setSelectOptions(
+        controls.temporal,
+        TEMPORAL_STYLES.map((key) => [key, prettyLabel(key)]),
+        'instant'
+    );
+};
+
+const syncFormationControls = () => {
+    const formationEntries = Object.entries(FORMATIONS[baseRecipe.family])
+        .map(([key, item]) => [key, item.label]);
+    setSelectOptions(controls.formation, formationEntries, baseRecipe.formation);
+    setSelectOptions(
+        controls.secondaryFormation,
+        formationEntries,
+        baseRecipe.hybrid ? baseRecipe.secondaryFormation : 'none',
+        { value: 'none', label: 'None' }
+    );
+};
+
+const syncControls = () => {
+    controls.family.value = baseRecipe.family;
+    controls.element.value = baseRecipe.element;
+    controls.power.value = baseRecipe.power;
+    syncFormationControls();
+    controls.geometry.value = baseRecipe.geometry;
+    controls.secondaryGeometry.value = baseRecipe.secondaryGeometry;
+    controls.trace.value = baseRecipe.traceStyle;
+    controls.secondaryTrace.value = baseRecipe.secondaryTraceStyle;
+    controls.particleKit.value = baseRecipe.particleKit;
+    controls.flow.value = baseRecipe.flow;
+    controls.temporal.value = baseRecipe.temporalStyle;
+    controls.secondaryGeometry.disabled = !baseRecipe.hybrid;
+    controls.secondaryTrace.disabled = !baseRecipe.hybrid;
+};
 
 const setNotice = (message, tone = 'default') => {
     notice.textContent = message;
@@ -101,28 +182,12 @@ const currentExportOptions = () => ({
 });
 
 const updateRecipeReadout = () => {
-    recipeName.textContent = baseRecipe.name;
     recipeFamily.textContent = EFFECT_FAMILIES[baseRecipe.family].shortLabel;
     recipeElement.textContent = ELEMENTS[baseRecipe.element].label;
-    const hybridDescription = baseRecipe.hybrid
-        ? ` It blends ${baseRecipe.formationLabel.toLowerCase()} with ${baseRecipe.secondaryFormationLabel.toLowerCase()}.`
-        : ` This seed uses a ${baseRecipe.formationLabel.toLowerCase()} composition.`;
-    recipeDescription.textContent = `${baseRecipe.description}${hybridDescription}`;
     durationStat.textContent = `${activeEffect.duration.toFixed(1)}s`;
     particleStat.textContent = activeEffect.particleCount;
     layerStat.textContent = baseRecipe.layers;
     symmetryStat.textContent = `${baseRecipe.symmetry}-way`;
-    formationStat.textContent = baseRecipe.hybrid
-        ? `${baseRecipe.formationLabel} + ${baseRecipe.secondaryFormationLabel}`
-        : baseRecipe.formationLabel;
-    geometryStat.textContent = baseRecipe.hybrid
-        ? `${baseRecipe.geometry} / ${baseRecipe.secondaryGeometry}`.replace(/-/g, ' ')
-        : baseRecipe.geometry.replace(/-/g, ' ');
-    traceStat.textContent = baseRecipe.hybrid
-        ? `${baseRecipe.traceStyle} / ${baseRecipe.secondaryTraceStyle}`
-        : baseRecipe.traceStyle;
-    particleStyleStat.textContent = baseRecipe.particleKit;
-    flowStat.textContent = `${baseRecipe.flow} · ${baseRecipe.temporalStyle}`.replace(/-/g, ' ');
     paletteSwatches.replaceChildren();
     baseRecipe.palette.forEach((color, index) => {
         const swatch = document.createElement('span');
@@ -144,24 +209,30 @@ const resetPlayback = () => {
     pauseButton.setAttribute('aria-pressed', 'false');
 };
 
-const applyRecipe = (recipe) => {
+const applyRecipe = (recipe, { showNotice = false } = {}) => {
     baseRecipe = structuredClone(recipe);
     activeEffect = new AbilityEffect(baseRecipe);
+    syncControls();
     updateRecipeReadout();
     resetPlayback();
+    atlasPreviewShell.hidden = true;
+    if (showNotice) setNotice('Effect updated', 'success');
 };
 
-const generateRecipe = ({ useTypedSeed = false } = {}) => {
-    const seed = useTypedSeed ? Number(seedInput.value) || randomSeed() : randomSeed();
+const rebuildRecipe = (patch, { showNotice = true } = {}) => {
+    applyRecipe({ ...baseRecipe, ...patch }, { showNotice });
+};
+
+const generateFromControls = ({ freshSeed = false } = {}) => {
+    const seed = freshSeed ? randomSeed() : Number(seedInput.value) || randomSeed();
     const recipe = createEffectRecipe({
-        family: familySelect.value,
-        element: elementSelect.value,
-        power: powerSelect.value,
+        family: controls.family.value,
+        element: controls.element.value,
+        power: controls.power.value,
         seed
     });
     applyRecipe(recipe);
-    atlasPreviewShell.hidden = true;
-    setNotice(`Generated ${recipe.name} · ${recipe.formationLabel}`, 'success');
+    setNotice(`Variation ${recipe.seed} generated`, 'success');
 };
 
 const playbackTime = (now) => playing ? (now - startedAt) / 1000 : frozenTime;
@@ -200,6 +271,17 @@ const createAtlas = (frames, size) => {
         atlasContext.drawImage(frame, index % columns * size, Math.floor(index / columns) * size);
     });
     return atlas;
+};
+
+const prepareGifFrame = (frame) => {
+    const prepared = document.createElement('canvas');
+    prepared.width = frame.width;
+    prepared.height = frame.height;
+    const preparedContext = prepared.getContext('2d');
+    preparedContext.fillStyle = GIF_MATTE_COLOR;
+    preparedContext.fillRect(0, 0, prepared.width, prepared.height);
+    preparedContext.drawImage(frame, 0, 0);
+    return prepared;
 };
 
 const captureFrames = async () => {
@@ -261,19 +343,25 @@ const exportGif = async () => {
     }
     try {
         const { frames, fps } = await captureFrames();
-        setNotice('Encoding GIF…');
+        setNotice('Encoding transparent GIF…');
         const gif = new GIF({
             workers: 2,
             quality: 10,
             repeat: 0,
+            transparent: GIF_TRANSPARENT_COLOR,
             workerScript: GIF_WORKER_URL
         });
-        frames.forEach((frame) => gif.addFrame(frame, { copy: true, delay: Math.round(1000 / fps) }));
+        frames.forEach((frame) => {
+            gif.addFrame(prepareGifFrame(frame), {
+                copy: true,
+                delay: Math.round(1000 / fps)
+            });
+        });
         gif.on('finished', (blob) => {
             const url = URL.createObjectURL(blob);
             downloadUrl(url, `cast-${sanitizeFilename(baseRecipe.name)}-${timestamp()}.gif`);
             window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-            setNotice('Animated GIF exported', 'success');
+            setNotice('Transparent GIF exported', 'success');
         });
         gif.on('abort', () => setNotice('GIF export was cancelled.', 'danger'));
         gif.render();
@@ -283,15 +371,68 @@ const exportGif = async () => {
     }
 };
 
-generateButton.addEventListener('click', () => generateRecipe());
-newSeedButton.addEventListener('click', () => generateRecipe());
-seedInput.addEventListener('change', () => generateRecipe({ useTypedSeed: true }));
+const bindStructureControls = () => {
+    controls.family.addEventListener('change', () => generateFromControls());
+    controls.element.addEventListener('change', () => generateFromControls());
+    controls.power.addEventListener('change', () => generateFromControls());
+
+    controls.formation.addEventListener('change', () => {
+        const key = controls.formation.value;
+        const formation = FORMATIONS[baseRecipe.family][key];
+        rebuildRecipe({
+            formation: key,
+            formationLabel: formation.label,
+            geometry: formation.geometries[0],
+            flow: formation.flows[0]
+        });
+    });
+
+    controls.secondaryFormation.addEventListener('change', () => {
+        const key = controls.secondaryFormation.value;
+        if (key === 'none') {
+            rebuildRecipe({ hybrid: false });
+            return;
+        }
+        const formation = FORMATIONS[baseRecipe.family][key];
+        rebuildRecipe({
+            hybrid: true,
+            secondaryFormation: key,
+            secondaryFormationLabel: formation.label,
+            secondaryGeometry: formation.geometries[0]
+        });
+    });
+
+    controls.geometry.addEventListener('change', () => rebuildRecipe({ geometry: controls.geometry.value }));
+    controls.secondaryGeometry.addEventListener('change', () => rebuildRecipe({
+        secondaryGeometry: controls.secondaryGeometry.value
+    }));
+    controls.trace.addEventListener('change', () => rebuildRecipe({ traceStyle: controls.trace.value }));
+    controls.secondaryTrace.addEventListener('change', () => rebuildRecipe({
+        secondaryTraceStyle: controls.secondaryTrace.value
+    }));
+    controls.particleKit.addEventListener('change', () => {
+        const particleKit = controls.particleKit.value;
+        rebuildRecipe({
+            particleKit,
+            particleShapes: [...PARTICLE_KITS[particleKit]]
+        });
+    });
+    controls.flow.addEventListener('change', () => rebuildRecipe({ flow: controls.flow.value }));
+    controls.temporal.addEventListener('change', () => rebuildRecipe({ temporalStyle: controls.temporal.value }));
+};
+
+populateStaticControls();
+bindStructureControls();
+
+generateButton.addEventListener('click', () => generateFromControls());
+newSeedButton.addEventListener('click', () => generateFromControls({ freshSeed: true }));
+seedInput.addEventListener('change', () => generateFromControls());
 seedInput.addEventListener('input', () => {
     window.clearTimeout(seedInputTimer);
-    seedInputTimer = window.setTimeout(() => generateRecipe({ useTypedSeed: true }), 240);
+    seedInputTimer = window.setTimeout(() => generateFromControls(), 260);
 });
 seedInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') generateRecipe({ useTypedSeed: true });
+    if (event.key === 'Enter') generateFromControls();
 });
 replayButton.addEventListener('click', resetPlayback);
 pauseButton.addEventListener('click', () => {
@@ -312,5 +453,21 @@ document.querySelector('#exportAtlasBtn').addEventListener('click', exportAtlas)
 document.querySelector('#exportFramesBtn').addEventListener('click', exportFramesZip);
 document.querySelector('#exportGifBtn').addEventListener('click', exportGif);
 
-applyRecipe(createEffectRecipe({ family: 'burst', element: 'fire', power: 'standard', seed: 734211 }));
+const initialRecipe = createEffectRecipe({ family: 'burst', element: 'arcane', power: 'standard', seed: 734211 });
+applyRecipe({
+    ...initialRecipe,
+    formation: 'radial',
+    formationLabel: FORMATIONS.burst.radial.label,
+    geometry: 'ellipse',
+    hybrid: true,
+    secondaryFormation: 'crescent',
+    secondaryFormationLabel: FORMATIONS.burst.crescent.label,
+    secondaryGeometry: 'bow',
+    traceStyle: 'shards',
+    secondaryTraceStyle: 'spray',
+    particleKit: 'crystals',
+    particleShapes: [...PARTICLE_KITS.crystals],
+    flow: 'outward',
+    temporalStyle: 'instant'
+});
 requestAnimationFrame(animationLoop);

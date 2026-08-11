@@ -133,7 +133,7 @@ export const POWER_LEVELS = {
     mythic: { label: 'Mythic', density: 1.34, scale: 1.12, brightness: 1.08 }
 };
 
-const FORMATIONS = {
+export const FORMATIONS = {
     burst: {
         radial: { label: 'Radial bloom', geometries: ['circle', 'ellipse', 'clover'], flows: ['outward'] },
         cone: { label: 'Directional fan', geometries: ['fan', 'split-fan'], flows: ['forward'] },
@@ -190,8 +190,8 @@ const FORMATIONS = {
     }
 };
 
-const TRACE_STYLES = ['pixels', 'dashes', 'shards', 'clusters', 'sparks', 'chain', 'streaks', 'paired', 'checker', 'spray', 'beads'];
-const PARTICLE_KITS = {
+export const TRACE_STYLES = ['pixels', 'dashes', 'shards', 'clusters', 'sparks', 'chain', 'streaks', 'paired', 'checker', 'spray', 'beads'];
+export const PARTICLE_KITS = {
     embers: ['square', 'cluster', 'spark'],
     shards: ['shard', 'diamond', 'streak'],
     motes: ['circle', 'square', 'spark'],
@@ -208,7 +208,7 @@ const PARTICLE_KITS = {
     bubbles: ['circle', 'pebble', 'square']
 };
 const GLOW_STYLES = ['square', 'diamond', 'bands', 'soft', 'wedges', 'halo', 'none'];
-const TEMPORAL_STYLES = ['instant', 'staggered', 'double-pulse', 'slow-build', 'echo'];
+export const TEMPORAL_STYLES = ['instant', 'staggered', 'double-pulse', 'slow-build', 'echo'];
 const FAMILY_KEYS = Object.keys(EFFECT_FAMILIES);
 const ELEMENT_KEYS = Object.keys(ELEMENTS);
 
