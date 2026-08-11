@@ -1,272 +1,212 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Art VFX Generator</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090a0e">
+    <title>Ability FX Forge</title>
+    <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
-    <div class="app-shell">
-        <aside class="panel left-panel" aria-label="Project and preset controls">
+    <main class="app-shell">
+        <aside class="panel left-panel" aria-label="Effect generator">
             <header class="brand-block">
-                <span class="eyebrow">Pixel Tools</span>
-                <h1>FX Generator</h1>
-                <p>Parametric particle authoring for pixel-art VFX.</p>
+                <span class="eyebrow">Pixel ability laboratory</span>
+                <h1>Ability FX Forge</h1>
+                <p>Generate readable, staged pixel effects — built like a cast, not a particle cloud.</p>
             </header>
 
-            <section class="tool-card">
-                <h2>Presets</h2>
-                <label class="field-label" for="presetSearch" title="Filter the preset list by name.">Filter</label>
-                <input id="presetSearch" class="text-input" type="text" placeholder="Filter presets…">
-                <label class="field-label" for="presetSelect" title="Choose a built-in effect preset to load.">Effect Library</label>
-                <select id="presetSelect" class="control-select"></select>
-                <button id="loadPresetBtn" class="button primary">Load Preset</button>
-            </section>
-
-            <section class="tool-card hierarchy-card">
-                <h2>Hierarchy</h2>
-                <ul class="hierarchy-list" aria-label="Scene hierarchy">
-                    <li class="active"><span class="status-dot"></span> Pixel Emitter</li>
-                    <li id="hierarchyResolution">Canvas Camera · 160×160</li>
-                    <li>Checkerboard Preview</li>
-                </ul>
-            </section>
-
-            <section class="tool-card">
-                <h2>Global</h2>
-                <label class="checkbox-row" for="showTarget" title="Toggle the target dummy silhouette in the viewport for scale reference.">
-                    <input id="showTarget" type="checkbox" checked>
-                    <span>Show target dummy</span>
-                </label>
-                <label class="checkbox-row" for="showOriginDot" title="Toggle the emitter origin marker dot in the viewport.">
-                    <input id="showOriginDot" type="checkbox" checked>
-                    <span>Show origin dot</span>
-                </label>
-                <label class="field-label" for="canvasSizeSelect" title="Set the internal canvas resolution used for rendering and export.">Canvas Size</label>
-                <select id="canvasSizeSelect" class="control-select">
-                    <option value="64">64×64</option>
-                    <option value="128">128×128</option>
-                    <option value="160" selected>160×160</option>
-                    <option value="256">256×256</option>
-                    <option value="512">512×512</option>
-                </select>
-                <label class="checkbox-row" for="autoPlay" title="When on, particles spawn continuously; when off, only manual bursts add particles.">
-                    <input id="autoPlay" type="checkbox" checked>
-                    <span>Continuous emission</span>
-                </label>
-                <div class="control-row" id="playbackSpeedRow">
-                    <label for="playbackSpeedRange" title="Multiplies simulation delta time; 1.0 is normal speed.">Playback Speed</label>
-                    <input id="playbackSpeedRange" type="range" min="0.1" max="3.0" step="0.05" value="1.0">
-                    <input id="playbackSpeedNumber" type="number" min="0.1" max="3.0" step="0.05" value="1.0">
+            <section class="tool-card generator-card">
+                <div class="section-heading">
+                    <span>Generator</span>
+                    <span class="step-index">01</span>
                 </div>
-                <button id="randomizeBtn" class="button warm">Randomize</button>
-                <button id="resetBtn" class="button ghost">Reset Simulation</button>
+
+                <label class="field-label" for="familySelect">Effect archetype</label>
+                <select id="familySelect" class="control-select"></select>
+
+                <label class="field-label" for="elementSelect">Element</label>
+                <select id="elementSelect" class="control-select"></select>
+
+                <label class="field-label" for="powerSelect">Visual weight</label>
+                <select id="powerSelect" class="control-select"></select>
+
+                <label class="field-label" for="seedInput">Variation seed</label>
+                <div class="seed-row">
+                    <input id="seedInput" class="number-input" type="number" min="1" max="4294967295" step="1">
+                    <button id="newSeedBtn" class="icon-button" type="button" title="Generate with a fresh seed" aria-label="Generate with a fresh seed">↻</button>
+                </div>
+
+                <button id="generateBtn" class="button primary" type="button">Generate variant</button>
             </section>
 
-            <section class="tool-card export-card">
-                <h2>Export</h2>
-                <p id="exportHelp">Exports the internal transparent 160×160 canvas. The checkerboard is preview-only.</p>
-                <button id="downloadBtn" class="button success">Export PNG</button>
-                <button id="copyConfigBtn" class="button ghost">Copy Config JSON</button>
+            <section class="tool-card archetype-card">
+                <div class="section-heading">
+                    <span>Composition</span>
+                    <span class="step-index">02</span>
+                </div>
+                <div class="archetype-grid">
+                    <button class="archetype-button" data-family-card="burst" type="button" aria-pressed="false">
+                        <span class="archetype-icon burst-icon" aria-hidden="true"></span>
+                        <span><strong>Impact</strong><small>Flash · rings · debris</small></span>
+                    </button>
+                    <button class="archetype-button" data-family-card="barrier" type="button" aria-pressed="false">
+                        <span class="archetype-icon barrier-icon" aria-hidden="true"></span>
+                        <span><strong>Barrier</strong><small>Anchors · runes · orbit</small></span>
+                    </button>
+                    <button class="archetype-button" data-family-card="aura" type="button" aria-pressed="false">
+                        <span class="archetype-icon aura-icon" aria-hidden="true"></span>
+                        <span><strong>Aura</strong><small>Bloom · glyph · rise</small></span>
+                    </button>
+                </div>
             </section>
 
-            <section class="tool-card capture-card">
-                <h2>Capture</h2>
-                <label class="field-label" for="frameCountInput" title="Number of frames to capture for the sprite sheet or atlas (2–32).">Frame Count</label>
-                <input id="frameCountInput" class="number-input" type="number" min="2" max="32" step="1" value="8">
-                <label class="checkbox-row" for="loopModeToggle" title="Seamless loop uses steady-state sampling so frame N flows into frame 0. One-shot captures a single lifecycle burst.">
-                    <input id="loopModeToggle" type="checkbox" checked>
-                    <span>Seamless loop capture</span>
+            <section class="tool-card">
+                <div class="section-heading">
+                    <span>Preview</span>
+                    <span class="step-index">03</span>
+                </div>
+                <div class="button-pair">
+                    <button id="replayBtn" class="button compact" type="button">Cast again</button>
+                    <button id="pauseBtn" class="button compact ghost" type="button" aria-pressed="false">Pause</button>
+                </div>
+                <label class="checkbox-row" for="autoReplayToggle">
+                    <input id="autoReplayToggle" type="checkbox" checked>
+                    <span>Auto replay cast</span>
                 </label>
-                <button id="recordFramesBtn" class="button primary">Record 8 Frames</button>
-                <button id="exportAtlasBtn" class="button success">Export Atlas</button>
-                <button id="exportGifBtn" class="button warm">Export GIF</button>
+                <label class="checkbox-row" for="showTargetToggle">
+                    <input id="showTargetToggle" type="checkbox" checked>
+                    <span>Show target silhouette</span>
+                </label>
+                <label class="checkbox-row" for="showOriginToggle">
+                    <input id="showOriginToggle" type="checkbox">
+                    <span>Show cast origin</span>
+                </label>
             </section>
         </aside>
 
-        <main class="viewport-panel" aria-label="Canvas viewport">
+        <section class="viewport-panel" aria-label="Live effect preview">
             <div class="viewport-toolbar">
-                <span>Viewport</span>
-                <span id="particleCount">0 particles</span>
+                <span>Live cast</span>
+                <span id="stageLabel">Core flash · 0.0s</span>
             </div>
-            <div class="canvas-frame">
-                <canvas id="fxCanvas" width="160" height="160" aria-label="Pixel particle effect canvas"></canvas>
-            </div>
-            <div class="atlas-preview-shell" aria-label="Latest atlas export preview">
-                <span id="atlasPreviewLabel">Atlas Preview</span>
-                <div id="atlasPreview" class="atlas-preview empty">Export an atlas to preview frames here.</div>
-            </div>
-            <div class="viewport-footer">
-                <span id="internalResolution">Internal: 160×160</span>
-                <span id="cssScaleLabel">CSS Scale: 3× · image-rendering: pixelated</span>
-            </div>
-        </main>
 
-        <aside class="panel inspector-panel" aria-label="Particle emitter inspector">
-            <header class="inspector-header">
-                <span class="eyebrow">Inspector</span>
-                <h2>Pixel Emitter</h2>
+            <div class="canvas-stage">
+                <div class="canvas-halo" aria-hidden="true"></div>
+                <div class="canvas-frame">
+                    <canvas id="fxCanvas" width="160" height="160" aria-label="Generated pixel ability effect"></canvas>
+                </div>
+                <div class="timeline" aria-hidden="true"><span id="frameProgress"></span></div>
+                <div class="stage-notes" aria-hidden="true">
+                    <span>Flash</span>
+                    <span>Form</span>
+                    <span>Sustain</span>
+                    <span>Release</span>
+                </div>
+            </div>
+
+            <div id="atlasPreviewShell" class="atlas-preview-shell" hidden>
+                <div class="atlas-preview-heading">
+                    <span>Last exported atlas</span>
+                    <span>8 columns</span>
+                </div>
+                <div id="atlasPreview" class="atlas-preview"></div>
+            </div>
+
+            <footer class="viewport-footer">
+                <span>Internal: 160×160</span>
+                <span>Hard pixels · staged motion</span>
+            </footer>
+        </section>
+
+        <aside class="panel inspector-panel" aria-label="Generated recipe and export settings">
+            <header class="recipe-header">
+                <span class="eyebrow">Generated recipe</span>
+                <h2 id="recipeName">Ember Detonation</h2>
+                <div class="tag-row">
+                    <span id="recipeFamily" class="tag">Impact</span>
+                    <span id="recipeElement" class="tag muted">Fire</span>
+                </div>
+                <p id="recipeDescription"></p>
             </header>
 
-            <div class="accordion-stack">
-                <details open>
-                    <summary>Emission</summary>
-                    <div class="section-grid">
-                        <div class="control-row" data-control="emission.spawnRate" data-min="0" data-max="250" data-step="1">
-                            <label title="Particles spawned per second during continuous emission.">Spawn Rate</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="emission.burstAmount" data-min="0" data-max="500" data-step="1">
-                            <label title="Number of particles created in a single burst trigger.">Burst Amount</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="emission.maxParticles" data-min="10" data-max="1200" data-step="10">
-                            <label title="Hard cap on how many particles can exist simultaneously.">Max Particles</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <button id="burstBtn" class="button primary wide">Trigger Burst</button>
-                    </div>
-                </details>
+            <section class="inspector-section">
+                <div class="section-heading"><span>Palette & structure</span></div>
+                <div id="paletteSwatches" class="palette-swatches" aria-label="Generated color palette"></div>
+                <dl class="stat-grid">
+                    <div><dt>Duration</dt><dd id="durationStat">2.8s</dd></div>
+                    <div><dt>Particles</dt><dd id="particleStat">140</dd></div>
+                    <div><dt>Rings</dt><dd id="ringStat">2</dd></div>
+                    <div><dt>Symmetry</dt><dd id="symmetryStat">6-way</dd></div>
+                    <div class="wide"><dt>Core motif</dt><dd id="motifStat">flare</dd></div>
+                </dl>
+            </section>
 
-                <details open>
-                    <summary>Shape / Area</summary>
-                    <div class="section-grid">
-                        <label class="field-label" for="shapeType" title="Geometry of the spawn area: point, filled circle, box, or ring perimeter.">Emitter Shape</label>
-                        <select id="shapeType" class="control-select" data-select="shape.type">
-                            <option value="point">Point</option>
-                            <option value="circle">Circle</option>
-                            <option value="box">Box</option>
-                            <option value="ring">Ring</option>
-                        </select>
-                        <div class="control-row" data-control="shape.radius" data-min="0" data-max="80" data-step="1">
-                            <label title="Radius of the circle or ring spawn area in pixels.">Radius</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="shape.width" data-min="1" data-max="160" data-step="1">
-                            <label title="Horizontal extent of the box spawn area in pixels.">Box Width</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="shape.height" data-min="1" data-max="160" data-step="1">
-                            <label title="Vertical extent of the box spawn area in pixels.">Box Height</label>
-                            <input type="range"><input type="number">
-                        </div>
-                    </div>
-                </details>
+            <section class="inspector-section">
+                <div class="section-heading"><span>Art direction</span></div>
+                <div class="tuning-stack">
+                    <label class="tuning-row">
+                        <span>Density</span><output>1.00×</output>
+                        <input type="range" data-tuning="density" min="0.55" max="1.45" value="1" step="0.05">
+                    </label>
+                    <label class="tuning-row">
+                        <span>Scale</span><output>1.00×</output>
+                        <input type="range" data-tuning="scale" min="0.72" max="1.28" value="1" step="0.04">
+                    </label>
+                    <label class="tuning-row">
+                        <span>Motion tempo</span><output>1.00×</output>
+                        <input type="range" data-tuning="tempo" min="0.7" max="1.35" value="1" step="0.05">
+                    </label>
+                    <label class="tuning-row">
+                        <span>Cast length</span><output>1.00×</output>
+                        <input type="range" data-tuning="duration" min="0.72" max="1.35" value="1" step="0.05">
+                    </label>
+                </div>
+            </section>
 
-                <details open>
-                    <summary>Movement</summary>
-                    <div class="section-grid">
-                        <div class="control-row" data-control="movement.minVelocity" data-min="0" data-max="250" data-step="1">
-                            <label title="Minimum initial speed assigned to a newly spawned particle.">Min Velocity</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="movement.maxVelocity" data-min="0" data-max="350" data-step="1">
-                            <label title="Maximum initial speed assigned to a newly spawned particle.">Max Velocity</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="movement.angle" data-min="-180" data-max="180" data-step="1">
-                            <label title="Central direction of particle emission in degrees (0 = right, -90 = up).">Angle</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="movement.spread" data-min="0" data-max="360" data-step="1">
-                            <label title="Cone width around the emission angle; 360 emits in all directions.">Spread</label>
-                            <input type="range"><input type="number">
-                        </div>
-                    </div>
-                </details>
-
-                <details open>
-                    <summary>Physics & Forces</summary>
-                    <div class="section-grid">
-                        <div class="control-row" data-control="physics.gravity" data-min="-220" data-max="220" data-step="1">
-                            <label title="Vertical acceleration applied each frame; negative floats upward.">Gravity</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="physics.drag" data-min="0.80" data-max="1.02" data-step="0.001">
-                            <label title="Velocity multiplier per frame; values below 1 slow particles, above 1 accelerate them.">Drag</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="forces.orbitalVelocity" data-min="-260" data-max="260" data-step="1">
-                            <label title="Tangential force that spins particles around the emitter origin.">Orbital Velocity</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="forces.vortexPull" data-min="-260" data-max="260" data-step="1">
-                            <label title="Radial force pulling particles toward (positive) or away from (negative) the emitter center.">Vortex Pull</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="forces.turbulence" data-min="0" data-max="120" data-step="1">
-                            <label title="Random jitter force applied each frame — adds organic chaos to movement.">Turbulence</label>
-                            <input type="range"><input type="number">
-                        </div>
-                    </div>
-                </details>
-
-                <details open>
-                    <summary>Visuals</summary>
-                    <div class="section-grid">
-                        <div class="color-grid">
-                            <label title="Color of a particle at birth.">Start Color <input id="startColor" type="color" data-color="visuals.startColor"></label>
-                            <label title="Color of a particle just before it disappears.">End Color <input id="endColor" type="color" data-color="visuals.endColor"></label>
-                        </div>
-                        <label class="field-label" for="paletteInput" title="Comma-separated hex colors; each new particle picks one at random for its start color.">Palette Array</label>
-                        <input id="paletteInput" class="text-input" type="text" data-text="visuals.palette" placeholder="#ffcc00, #ff5500, #ffffff">
-                        <label class="field-label" for="particleShapeSelect" title="Pixel-art shape used to draw each particle; all shapes are hard-edged using only filled rectangles.">Particle Shape</label>
-                        <select id="particleShapeSelect" class="control-select" data-select="visuals.particleShape">
-                            <option value="square">Square</option>
-                            <option value="circle">Circle</option>
-                            <option value="diamond">Diamond</option>
-                            <option value="cross">Cross</option>
-                            <option value="plus">Plus</option>
-                            <option value="star">Star</option>
-                            <option value="spark">Radiant Spark</option>
-                            <option value="flame">Tapered Flame</option>
-                            <option value="shard">Energy Shard</option>
-                            <option value="pixel-cluster">Pixel Cluster</option>
+            <section class="inspector-section export-section">
+                <div class="section-heading"><span>Sprite export</span></div>
+                <div class="export-grid">
+                    <label class="field-label" for="canvasSizeSelect">Frame size
+                        <select id="canvasSizeSelect" class="control-select">
+                            <option value="128">128 × 128</option>
+                            <option value="160" selected>160 × 160</option>
+                            <option value="192">192 × 192</option>
+                            <option value="256">256 × 256</option>
                         </select>
-                        <label class="field-label" for="renderStyleSelect" title="Layered styles add a dark rim, body shading, highlights, glow, and short motion accents while keeping hard pixel edges.">Render Style</label>
-                        <select id="renderStyleSelect" class="control-select" data-select="visuals.renderStyle">
-                            <option value="flat">Flat</option>
-                            <option value="shaded">Shaded Pixel</option>
-                            <option value="luminous">Luminous Pixel</option>
+                    </label>
+                    <label class="field-label" for="frameCountSelect">Frames
+                        <select id="frameCountSelect" class="control-select">
+                            <option value="24">24</option>
+                            <option value="32" selected>32</option>
+                            <option value="48">48</option>
                         </select>
-                        <label class="field-label" for="coreStyleSelect" title="Adds a coherent shaded center or ring underneath the particles, useful for fireballs, portals, auras, and magic circles.">Effect Core</label>
-                        <select id="coreStyleSelect" class="control-select" data-select="visuals.coreStyle">
-                            <option value="none">None</option>
-                            <option value="orb">Shaded Orb</option>
-                            <option value="ring">Energy Ring</option>
+                    </label>
+                    <label class="field-label" for="fpsSelect">GIF rate
+                        <select id="fpsSelect" class="control-select">
+                            <option value="12">12 FPS</option>
+                            <option value="16" selected>16 FPS</option>
+                            <option value="24">24 FPS</option>
                         </select>
-                        <div class="control-row" data-control="visuals.startSize" data-min="1" data-max="18" data-step="1">
-                            <label title="Pixel size of a particle when it spawns.">Start Size</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="visuals.endSize" data-min="0" data-max="18" data-step="1">
-                            <label title="Pixel size of a particle just before it disappears; 0 fades to nothing.">End Size</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="visuals.life" data-min="0.1" data-max="6" data-step="0.1">
-                            <label title="How many seconds a particle lives before being removed.">Lifetime</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <div class="control-row" data-control="visuals.rotationSpeed" data-min="-6" data-max="6" data-step="0.1">
-                            <label title="Angular spin speed in radians per second. Works best with asymmetric shapes like diamond, cross, star.">Rotation Speed</label>
-                            <input type="range"><input type="number">
-                        </div>
-                        <label class="field-label" for="blendModeSelect" title="How particle pixels combine with what's beneath them.">Blend Mode</label>
-                        <select id="blendModeSelect" class="control-select">
-                            <option value="source-over">Normal</option>
-                            <option value="lighter">Additive</option>
-                            <option value="multiply">Multiply</option>
-                            <option value="screen">Screen</option>
-                        </select>
-                    </div>
-                </details>
-            </div>
+                    </label>
+                </div>
+                <label class="checkbox-row export-target" for="exportTargetToggle">
+                    <input id="exportTargetToggle" type="checkbox">
+                    <span>Include target in exports</span>
+                </label>
+                <button id="exportAtlasBtn" class="button primary" type="button">Export sprite atlas</button>
+                <div class="button-pair">
+                    <button id="exportFramesBtn" class="button compact" type="button">PNG sequence</button>
+                    <button id="exportGifBtn" class="button compact" type="button">Animated GIF</button>
+                </div>
+            </section>
         </aside>
-    </div>
+    </main>
+
+    <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/main.js?v=3"></script>
 </body>
 </html>

@@ -1,586 +1,344 @@
-import Emitter, { mergeEmitterConfig } from './engine/Emitter.js';
-import Renderer from './engine/Renderer.js';
-import { renderSeamlessLoopFrames } from './engine/LoopFrames.js';
-import { presets } from './presets.js';
+import {
+    AbilityEffect,
+    EFFECT_FAMILIES,
+    ELEMENTS,
+    POWER_LEVELS,
+    createEffectRecipe,
+    randomSeed,
+    renderEffectFrames
+} from './AbilityEffect.js?v=3';
 
 const canvas = document.querySelector('#fxCanvas');
-const presetSelect = document.querySelector('#presetSelect');
-const particleCount = document.querySelector('#particleCount');
-const showTargetToggle = document.querySelector('#showTarget');
-const showOriginDotToggle = document.querySelector('#showOriginDot');
-const autoPlayToggle = document.querySelector('#autoPlay');
+const context = canvas.getContext('2d');
+context.imageSmoothingEnabled = false;
+
+const familySelect = document.querySelector('#familySelect');
+const elementSelect = document.querySelector('#elementSelect');
+const powerSelect = document.querySelector('#powerSelect');
+const seedInput = document.querySelector('#seedInput');
+const generateButton = document.querySelector('#generateBtn');
+const newSeedButton = document.querySelector('#newSeedBtn');
+const replayButton = document.querySelector('#replayBtn');
+const pauseButton = document.querySelector('#pauseBtn');
+const showTargetToggle = document.querySelector('#showTargetToggle');
+const showOriginToggle = document.querySelector('#showOriginToggle');
+const autoReplayToggle = document.querySelector('#autoReplayToggle');
+const exportTargetToggle = document.querySelector('#exportTargetToggle');
+const recipeName = document.querySelector('#recipeName');
+const recipeFamily = document.querySelector('#recipeFamily');
+const recipeElement = document.querySelector('#recipeElement');
+const recipeDescription = document.querySelector('#recipeDescription');
+const durationStat = document.querySelector('#durationStat');
+const particleStat = document.querySelector('#particleStat');
+const ringStat = document.querySelector('#ringStat');
+const symmetryStat = document.querySelector('#symmetryStat');
+const motifStat = document.querySelector('#motifStat');
+const paletteSwatches = document.querySelector('#paletteSwatches');
+const frameProgress = document.querySelector('#frameProgress');
+const stageLabel = document.querySelector('#stageLabel');
 const canvasSizeSelect = document.querySelector('#canvasSizeSelect');
-const frameCountInput = document.querySelector('#frameCountInput');
-const recordFramesBtn = document.querySelector('#recordFramesBtn');
+const frameCountSelect = document.querySelector('#frameCountSelect');
+const fpsSelect = document.querySelector('#fpsSelect');
 const atlasPreview = document.querySelector('#atlasPreview');
-const atlasPreviewLabel = document.querySelector('#atlasPreviewLabel');
-const internalResolution = document.querySelector('#internalResolution');
-const cssScaleLabel = document.querySelector('#cssScaleLabel');
-const hierarchyResolution = document.querySelector('#hierarchyResolution');
-const exportHelp = document.querySelector('#exportHelp');
-const loopModeToggle = document.querySelector('#loopModeToggle');
-const exportAtlasBtn = document.querySelector('#exportAtlasBtn');
-const downloadBtn = document.querySelector('#downloadBtn');
-const exportGifBtn = document.querySelector('#exportGifBtn');
-const copyConfigBtn = document.querySelector('#copyConfigBtn');
-const presetSearch = document.querySelector('#presetSearch');
-const blendModeSelect = document.querySelector('#blendModeSelect');
-const playbackSpeedRange = document.querySelector('#playbackSpeedRange');
-const playbackSpeedNumber = document.querySelector('#playbackSpeedNumber');
+const atlasPreviewShell = document.querySelector('#atlasPreviewShell');
+const notice = document.querySelector('#notice');
 
-const VIEWPORT_SIZE = 480;
-const CAPTURE_STEP = 1 / 60;
+let baseRecipe;
+let activeEffect;
+let startedAt = performance.now();
+let frozenTime = 0;
+let playing = true;
+let noticeTimer;
 
-const PARTICLE_SHAPES = ['square', 'circle', 'diamond', 'cross', 'plus', 'star', 'spark', 'flame', 'shard', 'pixel-cluster'];
-
-const clone = (value) => structuredClone(value);
-const pathParts = (path) => path.split('.');
-
-let activePresetKey = 'fireball';
-let activeConfig = mergeEmitterConfig(presets[activePresetKey]);
-let emitter = new Emitter(activeConfig, { width: canvas.width, height: canvas.height });
-
-const renderer = new Renderer(canvas, emitter, {
-    showTarget: showTargetToggle.checked,
-    showOriginDot: showOriginDotToggle.checked,
-    continuous: autoPlayToggle.checked,
-    onFrame: (count) => {
-        particleCount.textContent = `${count} particle${count === 1 ? '' : 's'}`;
-    }
-});
-
-showOriginDotToggle.addEventListener('change', () => renderer.setShowOriginDot(showOriginDotToggle.checked));
-
-const getByPath = (object, path) => pathParts(path).reduce((target, key) => target[key], object);
-
-const setByPath = (object, path, value) => {
-    const keys = pathParts(path);
-    const lastKey = keys.pop();
-    const target = keys.reduce((current, key) => current[key], object);
-    target[lastKey] = value;
+const populateSelect = (select, entries, randomLabel) => {
+    select.replaceChildren();
+    const randomOption = new Option(randomLabel, 'random');
+    select.append(randomOption);
+    Object.entries(entries).forEach(([key, item]) => {
+        select.append(new Option(item.label, key));
+    });
 };
 
-const normalizePalette = (value) => value
-    .split(',')
-    .map((color) => color.trim())
-    .filter(Boolean);
+populateSelect(familySelect, EFFECT_FAMILIES, 'Surprise me');
+populateSelect(elementSelect, ELEMENTS, 'Any element');
+Object.entries(POWER_LEVELS).forEach(([key, item]) => powerSelect.append(new Option(item.label, key)));
+powerSelect.value = 'standard';
 
-const sanitizeFilenamePart = (value) => value
+const setNotice = (message, tone = 'default') => {
+    notice.textContent = message;
+    notice.dataset.tone = tone;
+    notice.classList.add('visible');
+    window.clearTimeout(noticeTimer);
+    noticeTimer = window.setTimeout(() => notice.classList.remove('visible'), 2800);
+};
+
+const sanitizeFilename = (value) => value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'effect';
+    .replace(/^-+|-+$/g, '') || 'ability-fx';
 
-const formatTimestamp = () => new Date()
-    .toISOString()
-    .replace(/[:.]/g, '-')
-    .replace('T', '_')
-    .replace('Z', '');
+const timestamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 
 const downloadUrl = (url, filename) => {
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = url;
-    link.click();
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
 };
 
-const canvasToBlob = (targetCanvas) => new Promise((resolve) => {
-    targetCanvas.toBlob((blob) => resolve(blob), 'image/png');
+const canvasToBlob = (sourceCanvas) => new Promise((resolve, reject) => {
+    sourceCanvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Canvas export failed.'));
+    }, 'image/png');
 });
 
-const updateRecordButtonLabel = () => {
-    recordFramesBtn.textContent = `Record ${getFrameCount()} Frames`;
-};
+const currentExportOptions = () => ({
+    size: Number(canvasSizeSelect.value),
+    frameCount: Number(frameCountSelect.value),
+    fps: Number(fpsSelect.value),
+    options: {
+        showTarget: exportTargetToggle.checked,
+        showOrigin: false
+    }
+});
 
-const getFrameCount = () => {
-    const min = Number(frameCountInput.min);
-    const max = Number(frameCountInput.max);
-    const value = Math.round(Number(frameCountInput.value) || 8);
-    const clamped = Math.min(max, Math.max(min, value));
-    frameCountInput.value = clamped;
-    return clamped;
-};
-
-const getCanvasSize = () => canvas.width;
-
-renderer.setFramePreviewMode(true, getFrameCount(), activeConfig.visuals.life);
-
-const flashButton = (button, message, duration = 1800) => {
-    const original = button.textContent;
-    button.textContent = message;
-    button.disabled = true;
-    setTimeout(() => {
-        button.textContent = original;
-        button.disabled = false;
-    }, duration);
-};
-
-const captureFrameSequenceLoop = async () => {
-    const frameCount = getFrameCount();
-    const size = getCanvasSize();
-    const { frames: frameCanvases } = await renderSeamlessLoopFrames({
-        config: activeConfig,
-        width: size,
-        height: size,
-        frameCount
+const updateFamilyCards = () => {
+    document.querySelectorAll('[data-family-card]').forEach((card) => {
+        const selected = card.dataset.familyCard === familySelect.value
+            || (familySelect.value === 'random' && card.dataset.familyCard === baseRecipe.family);
+        card.classList.toggle('selected', selected);
+        card.setAttribute('aria-pressed', selected ? 'true' : 'false');
     });
-    const frames = await Promise.all(frameCanvases.map(canvasToBlob));
-
-    return { frames, frameCount, size, loopMode: 'loop' };
 };
 
-const captureFrameSequenceOneShot = async () => {
-    const frameCount = getFrameCount();
-    const size = getCanvasSize();
-    const lifetime = Math.max(0.1, activeConfig.visuals.life);
+const updateRecipeReadout = () => {
+    recipeName.textContent = baseRecipe.name;
+    recipeFamily.textContent = EFFECT_FAMILIES[baseRecipe.family].shortLabel;
+    recipeElement.textContent = ELEMENTS[baseRecipe.element].label;
+    recipeDescription.textContent = baseRecipe.description;
+    durationStat.textContent = `${activeEffect.duration.toFixed(1)}s`;
+    particleStat.textContent = activeEffect.particleCount;
+    ringStat.textContent = baseRecipe.rings;
+    symmetryStat.textContent = `${baseRecipe.symmetry}-way`;
+    motifStat.textContent = baseRecipe.motif.replace(/-/g, ' ');
+    paletteSwatches.replaceChildren();
+    baseRecipe.palette.forEach((color, index) => {
+        const swatch = document.createElement('span');
+        swatch.className = 'palette-swatch';
+        swatch.style.background = color;
+        swatch.title = `${index + 1}: ${color}`;
+        paletteSwatches.append(swatch);
+    });
+    document.documentElement.style.setProperty('--effect-accent', baseRecipe.palette[1]);
+    document.documentElement.style.setProperty('--effect-deep', baseRecipe.palette[3]);
+    seedInput.value = baseRecipe.seed;
+    updateFamilyCards();
+};
 
-    const captureCanvas = document.createElement('canvas');
-    captureCanvas.width = size;
-    captureCanvas.height = size;
-    const captureContext = captureCanvas.getContext('2d');
-    captureContext.imageSmoothingEnabled = false;
+const resetPlayback = () => {
+    startedAt = performance.now();
+    frozenTime = 0;
+    playing = true;
+    pauseButton.textContent = 'Pause';
+    pauseButton.setAttribute('aria-pressed', 'false');
+};
 
-    const captureEmitter = new Emitter(activeConfig, { width: size, height: size });
-    captureEmitter.reset();
-    captureEmitter.burst(activeConfig.emission.burstAmount);
+const applyRecipe = (recipe, { restart = true } = {}) => {
+    baseRecipe = structuredClone(recipe);
+    activeEffect = new AbilityEffect(baseRecipe);
+    updateRecipeReadout();
+    if (restart) resetPlayback();
+};
 
-    const frames = [];
-    let elapsed = 0;
-    const startT = lifetime * 0.05;
-    const endT = lifetime * 0.92;
+const generateRecipe = ({ freshSeed = false } = {}) => {
+    const seed = freshSeed ? randomSeed() : Number(seedInput.value) || randomSeed();
+    const recipe = createEffectRecipe({
+        family: familySelect.value,
+        element: elementSelect.value,
+        power: powerSelect.value,
+        seed
+    });
+    applyRecipe(recipe);
+    atlasPreviewShell.hidden = true;
+    setNotice(`Generated ${recipe.name}`, 'success');
+};
 
-    for (let index = 0; index < frameCount; index += 1) {
-        const targetTime = frameCount === 1
-            ? startT
-            : startT + ((endT - startT) * index) / (frameCount - 1);
+const playbackTime = (now) => playing ? (now - startedAt) / 1000 : frozenTime;
 
-        while (elapsed + CAPTURE_STEP < targetTime) {
-            captureEmitter.update(CAPTURE_STEP, false);
-            elapsed += CAPTURE_STEP;
+const getStage = (time) => {
+    const progress = time / activeEffect.duration;
+    if (time < 0.25) return 'Core flash';
+    if (progress < 0.26) return 'Primary form';
+    if (progress < 0.78) return baseRecipe.family === 'burst' ? 'Aftershock' : 'Sustain';
+    return 'Release';
+};
+
+const animationLoop = (now) => {
+    let time = playbackTime(now);
+    const hold = 0.72;
+
+    if (playing && time > activeEffect.duration + hold) {
+        if (autoReplayToggle.checked) {
+            startedAt = now;
+            time = 0;
+        } else {
+            frozenTime = activeEffect.duration;
+            playing = false;
+            pauseButton.textContent = 'Play';
         }
-
-        const remainder = targetTime - elapsed;
-        if (remainder > 0) {
-            captureEmitter.update(remainder, false);
-            elapsed = targetTime;
-        }
-
-        captureContext.clearRect(0, 0, size, size);
-        captureEmitter.draw(captureContext);
-        frames.push(await canvasToBlob(captureCanvas));
     }
 
-    return { frames, frameCount, size, loopMode: 'oneshot' };
+    activeEffect.draw(context, Math.min(time, activeEffect.duration), {
+        showTarget: showTargetToggle.checked,
+        showOrigin: showOriginToggle.checked
+    });
+
+    const progress = clamp(time / activeEffect.duration, 0, 1);
+    frameProgress.style.width = `${progress * 100}%`;
+    stageLabel.textContent = `${getStage(Math.min(time, activeEffect.duration))} · ${Math.min(time, activeEffect.duration).toFixed(1)}s`;
+    requestAnimationFrame(animationLoop);
 };
 
-const captureFrameSequence = async () => {
-    const useLoop = loopModeToggle ? loopModeToggle.checked : true;
-    return useLoop ? captureFrameSequenceLoop() : captureFrameSequenceOneShot();
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+const updateTuning = (input) => {
+    const key = input.dataset.tuning;
+    const value = Number(input.value);
+    baseRecipe.tuning[key] = value;
+    input.closest('.tuning-row').querySelector('output').value = `${value.toFixed(2)}×`;
+    applyRecipe(baseRecipe);
 };
 
-const createAtlasFromFrames = async (frames, frameCount, size) => {
-    const atlasCanvas = document.createElement('canvas');
-    atlasCanvas.width = frameCount * size;
-    atlasCanvas.height = size;
-    const atlasContext = atlasCanvas.getContext('2d');
+const createAtlas = (frames, size) => {
+    const columns = Math.min(8, frames.length);
+    const rows = Math.ceil(frames.length / columns);
+    const atlas = document.createElement('canvas');
+    atlas.width = size * columns;
+    atlas.height = size * rows;
+    const atlasContext = atlas.getContext('2d');
     atlasContext.imageSmoothingEnabled = false;
-
-    for (let index = 0; index < frames.length; index += 1) {
-        const bitmap = await createImageBitmap(frames[index]);
-        atlasContext.drawImage(bitmap, index * size, 0);
-        bitmap.close();
-    }
-
-    return atlasCanvas;
-};
-
-const updateAtlasPreview = (dataUrl, loopMode) => {
-    atlasPreview.classList.remove('empty');
-    atlasPreview.textContent = '';
-    const image = document.createElement('img');
-    image.src = dataUrl;
-    image.alt = 'Latest exported sprite atlas preview';
-    atlasPreview.append(image);
-
-    if (atlasPreviewLabel) {
-        atlasPreviewLabel.textContent = loopMode === 'loop'
-            ? 'Atlas Preview · Seamless Loop'
-            : 'Atlas Preview · One-Shot';
-    }
-};
-
-const applyEmitterConfig = ({ reset = false } = {}) => {
-    emitter.setConfig(activeConfig);
-    if (reset) {
-        emitter.reset();
-        emitter.burst(activeConfig.emission.burstAmount);
-    }
-    renderer.markPreviewDirty();
-};
-
-const updateCanvasMetadata = () => {
-    const size = getCanvasSize();
-    const displaySize = Math.min(VIEWPORT_SIZE, size <= VIEWPORT_SIZE ? VIEWPORT_SIZE : size);
-    const scale = displaySize / size;
-    canvas.style.width = `${displaySize}px`;
-    canvas.style.height = `${displaySize}px`;
-    internalResolution.textContent = `Internal: ${size}×${size}`;
-    cssScaleLabel.textContent = `CSS Scale: ${Number.isInteger(scale) ? `${scale}×` : `${scale.toFixed(2)}×`} · image-rendering: pixelated`;
-    hierarchyResolution.textContent = `Canvas Camera · ${size}×${size}`;
-    exportHelp.textContent = `Exports the internal transparent ${size}×${size} canvas. The checkerboard is preview-only.`;
-};
-
-const resizeCanvas = (size) => {
-    canvas.width = size;
-    canvas.height = size;
-    renderer.context = canvas.getContext('2d');
-    renderer.context.imageSmoothingEnabled = false;
-    emitter.bounds = { width: size, height: size };
-    emitter.originX = size / 2;
-    emitter.originY = size / 2;
-    updateCanvasMetadata();
-    emitter.reset();
-    emitter.burst(activeConfig.emission.burstAmount);
-    renderer.markPreviewDirty();
-};
-
-const syncControlRow = (row) => {
-    const path = row.dataset.control;
-    const range = row.querySelector('input[type="range"]');
-    const number = row.querySelector('input[type="number"]');
-    const value = getByPath(activeConfig, path);
-
-    for (const input of [range, number]) {
-        input.min = row.dataset.min;
-        input.max = row.dataset.max;
-        input.step = row.dataset.step;
-        input.value = value;
-    }
-};
-
-const syncUiFromConfig = () => {
-    document.querySelectorAll('[data-control]').forEach(syncControlRow);
-
-    document.querySelectorAll('[data-select]').forEach((select) => {
-        select.value = getByPath(activeConfig, select.dataset.select);
-    });
-
-    document.querySelectorAll('[data-color]').forEach((input) => {
-        input.value = getByPath(activeConfig, input.dataset.color);
-    });
-
-    document.querySelectorAll('[data-text]').forEach((input) => {
-        const value = getByPath(activeConfig, input.dataset.text);
-        input.value = Array.isArray(value) ? value.join(', ') : value;
-    });
-
-    if (blendModeSelect) {
-        blendModeSelect.value = activeConfig.visuals.blendMode || activeConfig.blendMode || 'source-over';
-        renderer.setBlendMode(blendModeSelect.value);
-    }
-};
-
-const randomInRange = (min, max, step) => {
-    const raw = min + Math.random() * (max - min);
-    if (step >= 1) return Math.round(raw / step) * step;
-    const decimals = Math.max(0, String(step).split('.')[1]?.length || 0);
-    return Number((Math.round(raw / step) * step).toFixed(decimals));
-};
-
-const hslToHex = (hue, saturation, lightness) => {
-    const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
-    const x = chroma * (1 - Math.abs((hue / 60) % 2 - 1));
-    const match = lightness - chroma / 2;
-    const [red, green, blue] = hue < 60 ? [chroma, x, 0]
-        : hue < 120 ? [x, chroma, 0]
-            : hue < 180 ? [0, chroma, x]
-                : hue < 240 ? [0, x, chroma]
-                    : hue < 300 ? [x, 0, chroma]
-                        : [chroma, 0, x];
-
-    return [red, green, blue]
-        .map((channel) => Math.round((channel + match) * 255).toString(16).padStart(2, '0'))
-        .join('')
-        .replace(/^/, '#');
-};
-
-const randomHighSaturationColor = () => hslToHex(
-    Math.floor(Math.random() * 360),
-    randomInRange(0.72, 1, 0.01),
-    randomInRange(0.48, 0.72, 0.01)
-);
-
-const randomizeConfig = () => {
-    const randomized = clone(activeConfig);
-
-    document.querySelectorAll('[data-control]').forEach((row) => {
-        const min = Number(row.dataset.min);
-        const max = Number(row.dataset.max);
-        const step = Number(row.dataset.step);
-        setByPath(randomized, row.dataset.control, randomInRange(min, max, step));
-    });
-
-    if (randomized.movement.minVelocity > randomized.movement.maxVelocity) {
-        [randomized.movement.minVelocity, randomized.movement.maxVelocity] = [
-            randomized.movement.maxVelocity,
-            randomized.movement.minVelocity
-        ];
-    }
-
-    document.querySelectorAll('[data-select]').forEach((select) => {
-        const options = Array.from(select.options).map((option) => option.value);
-        setByPath(randomized, select.dataset.select, options[Math.floor(Math.random() * options.length)]);
-    });
-
-    randomized.visuals.particleShape = PARTICLE_SHAPES[Math.floor(Math.random() * PARTICLE_SHAPES.length)];
-
-    const paletteLength = Math.floor(randomInRange(3, 5, 1));
-    const palette = Array.from({ length: paletteLength }, randomHighSaturationColor);
-    randomized.visuals.palette = palette;
-    randomized.visuals.startColor = palette[0];
-    randomized.visuals.endColor = palette.at(-1);
-    randomized.name = 'Randomized Effect';
-
-    activeConfig = randomized;
-    activePresetKey = 'randomized';
-    presetSelect.value = '';
-    syncUiFromConfig();
-    applyEmitterConfig({ reset: true });
-};
-
-const bindControlRows = () => {
-    document.querySelectorAll('[data-control]').forEach((row) => {
-        const path = row.dataset.control;
-        const inputs = row.querySelectorAll('input');
-
-        inputs.forEach((input) => {
-            input.addEventListener('input', () => {
-                const value = Number(input.value);
-                setByPath(activeConfig, path, value);
-                inputs.forEach((pairedInput) => {
-                    if (pairedInput !== input) pairedInput.value = value;
-                });
-                applyEmitterConfig();
-            });
-        });
-    });
-};
-
-const bindSimpleInputs = () => {
-    document.querySelectorAll('[data-select]').forEach((select) => {
-        select.addEventListener('change', () => {
-            setByPath(activeConfig, select.dataset.select, select.value);
-            applyEmitterConfig();
-        });
-    });
-
-    document.querySelectorAll('[data-color]').forEach((input) => {
-        input.addEventListener('input', () => {
-            setByPath(activeConfig, input.dataset.color, input.value);
-            applyEmitterConfig();
-        });
-    });
-
-    document.querySelectorAll('[data-text]').forEach((input) => {
-        input.addEventListener('change', () => {
-            setByPath(activeConfig, input.dataset.text, normalizePalette(input.value));
-            applyEmitterConfig();
-        });
-    });
-};
-
-const populatePresets = () => {
-    Object.entries(presets).forEach(([key, preset]) => {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = preset.name;
-        presetSelect.append(option);
-    });
-    presetSelect.value = activePresetKey;
-};
-
-const loadPreset = (key) => {
-    if (!presets[key]) return;
-    activePresetKey = key;
-    activeConfig = mergeEmitterConfig(presets[key]);
-    syncUiFromConfig();
-    applyEmitterConfig({ reset: true });
-};
-
-const recordFrames = async () => {
-    recordFramesBtn.disabled = true;
-    const { frames } = await captureFrameSequence();
-    const zip = new JSZip();
-    const presetName = sanitizeFilenamePart(activeConfig.name || activePresetKey);
-    const timestamp = formatTimestamp();
-
     frames.forEach((frame, index) => {
-        zip.file(`frame-${String(index + 1).padStart(2, '0')}.png`, frame);
+        atlasContext.drawImage(frame, index % columns * size, Math.floor(index / columns) * size);
     });
+    return atlas;
+};
 
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    downloadUrl(url, `sprite-frames-${presetName}-${timestamp}.zip`);
-    URL.revokeObjectURL(url);
-
-    flashButton(recordFramesBtn, '✓ Saved ZIP');
+const captureFrames = async () => {
+    const settings = currentExportOptions();
+    setNotice('Rendering full cast…');
+    const result = await renderEffectFrames({
+        recipe: baseRecipe,
+        size: settings.size,
+        frameCount: settings.frameCount,
+        options: settings.options
+    });
+    return { ...result, ...settings };
 };
 
 const exportAtlas = async () => {
-    exportAtlasBtn.disabled = true;
-    const { frames, frameCount, size, loopMode } = await captureFrameSequence();
-    const atlasCanvas = await createAtlasFromFrames(frames, frameCount, size);
-    const presetName = sanitizeFilenamePart(activeConfig.name || activePresetKey);
-    const timestamp = formatTimestamp();
-    const dataUrl = atlasCanvas.toDataURL('image/png');
-
-    updateAtlasPreview(dataUrl, loopMode);
-    downloadUrl(dataUrl, `atlas-${presetName}-${timestamp}.png`);
-
-    flashButton(exportAtlasBtn, '✓ Atlas Saved');
+    try {
+        const { frames, size } = await captureFrames();
+        const atlas = createAtlas(frames, size);
+        const dataUrl = atlas.toDataURL('image/png');
+        const image = new Image();
+        image.src = dataUrl;
+        image.alt = `${baseRecipe.name} sprite atlas`;
+        atlasPreview.replaceChildren(image);
+        atlasPreviewShell.hidden = false;
+        downloadUrl(dataUrl, `atlas-${sanitizeFilename(baseRecipe.name)}-${timestamp()}.png`);
+        setNotice('Sprite atlas exported', 'success');
+    } catch (error) {
+        console.error(error);
+        setNotice(error.message, 'danger');
+    }
 };
 
-let draggingOrigin = false;
-
-const updateOriginFromEvent = (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    emitter.originX = (event.clientX - rect.left) * scaleX;
-    emitter.originY = (event.clientY - rect.top) * scaleY;
-};
-
-const bindCanvasDrag = () => {
-    canvas.addEventListener('pointerdown', (event) => {
-        draggingOrigin = true;
-        updateOriginFromEvent(event);
-    });
-    canvas.addEventListener('pointermove', (event) => {
-        if (!draggingOrigin) return;
-        updateOriginFromEvent(event);
-    });
-    canvas.addEventListener('pointerup', () => {
-        draggingOrigin = false;
-    });
-    canvas.addEventListener('pointerleave', () => {
-        draggingOrigin = false;
-    });
-};
-
-const blobToImageData = async (blob, size) => {
-    const bitmap = await createImageBitmap(blob);
-    const offscreen = document.createElement('canvas');
-    offscreen.width = size;
-    offscreen.height = size;
-    const ctx = offscreen.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0);
-    bitmap.close();
-    return ctx.getImageData(0, 0, size, size);
+const exportFramesZip = async () => {
+    if (!globalThis.JSZip) {
+        setNotice('ZIP exporter is still loading.', 'danger');
+        return;
+    }
+    try {
+        const { frames } = await captureFrames();
+        const zip = new JSZip();
+        for (let index = 0; index < frames.length; index += 1) {
+            const blob = await canvasToBlob(frames[index]);
+            zip.file(`frame-${String(index).padStart(3, '0')}.png`, blob);
+        }
+        zip.file('recipe.json', JSON.stringify(baseRecipe, null, 2));
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(blob);
+        downloadUrl(url, `frames-${sanitizeFilename(baseRecipe.name)}-${timestamp()}.zip`);
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setNotice('PNG sequence exported', 'success');
+    } catch (error) {
+        console.error(error);
+        setNotice(error.message, 'danger');
+    }
 };
 
 const exportGif = async () => {
-    exportGifBtn.disabled = true;
-    const { frames, frameCount, size } = await captureFrameSequence();
-
-    const gif = new GIF({
-        workers: 2,
-        quality: 10,
-        width: size,
-        height: size,
-        transparent: 0x00000000
-    });
-
-    const delay = Math.round(1000 / frameCount * activeConfig.visuals.life);
-
-    for (const frame of frames) {
-        const imageData = await blobToImageData(frame, size);
-        gif.addFrame(imageData, { delay });
+    if (!globalThis.GIF) {
+        setNotice('GIF exporter is still loading.', 'danger');
+        return;
     }
-
-    gif.on('finished', (blob) => {
-        const url = URL.createObjectURL(blob);
-        const presetName = sanitizeFilenamePart(activeConfig.name || activePresetKey);
-        const timestamp = formatTimestamp();
-        downloadUrl(url, `animated-${presetName}-${timestamp}.gif`);
-        URL.revokeObjectURL(url);
-        flashButton(exportGifBtn, '✓ GIF Saved');
-    });
-
-    gif.render();
-};
-
-const filterPresets = () => {
-    const query = presetSearch.value.trim().toLowerCase();
-    const options = Array.from(presetSelect.options);
-    const visible = [];
-
-    options.forEach((option) => {
-        const matches = option.textContent.toLowerCase().includes(query);
-        option.hidden = !matches;
-        if (matches) visible.push(option);
-    });
-
-    if (visible.length === 1) {
-        presetSelect.value = visible[0].value;
-        loadPreset(visible[0].value);
+    try {
+        const { frames, fps } = await captureFrames();
+        setNotice('Encoding GIF…');
+        const gif = new GIF({
+            workers: 2,
+            quality: 1,
+            repeat: 0,
+            workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+        });
+        frames.forEach((frame) => gif.addFrame(frame, { copy: true, delay: Math.round(1000 / fps) }));
+        gif.on('finished', (blob) => {
+            const url = URL.createObjectURL(blob);
+            downloadUrl(url, `cast-${sanitizeFilename(baseRecipe.name)}-${timestamp()}.gif`);
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+            setNotice('Animated GIF exported', 'success');
+        });
+        gif.on('abort', () => setNotice('GIF export was cancelled.', 'danger'));
+        gif.render();
+    } catch (error) {
+        console.error(error);
+        setNotice(error.message, 'danger');
     }
 };
 
-const copyConfigJson = () => {
-    navigator.clipboard.writeText(JSON.stringify(activeConfig, null, 2));
-    flashButton(copyConfigBtn, '✓ Copied!');
-};
-
-const bindActions = () => {
-    document.querySelector('#loadPresetBtn').addEventListener('click', () => loadPreset(presetSelect.value));
-    presetSelect.addEventListener('change', () => loadPreset(presetSelect.value));
-    document.querySelector('#burstBtn').addEventListener('click', () => emitter.burst(activeConfig.emission.burstAmount));
-    document.querySelector('#resetBtn').addEventListener('click', () => {
-        emitter.reset();
-        emitter.burst(activeConfig.emission.burstAmount);
+document.querySelectorAll('[data-family-card]').forEach((card) => {
+    card.addEventListener('click', () => {
+        familySelect.value = card.dataset.familyCard;
+        generateRecipe({ freshSeed: true });
     });
-    downloadBtn.addEventListener('click', () => {
-        renderer.exportPng(`pixel-fx-${sanitizeFilenamePart(activeConfig.name || activePresetKey)}-${formatTimestamp()}.png`);
-        flashButton(downloadBtn, '✓ PNG Saved');
-    });
-    recordFramesBtn.addEventListener('click', recordFrames);
-    exportAtlasBtn.addEventListener('click', exportAtlas);
-    document.querySelector('#randomizeBtn').addEventListener('click', randomizeConfig);
-    canvasSizeSelect.addEventListener('change', () => resizeCanvas(Number(canvasSizeSelect.value)));
-    frameCountInput.addEventListener('input', () => {
-        updateRecordButtonLabel();
-        renderer.setFramePreviewMode(true, getFrameCount(), activeConfig.visuals.life);
-        renderer.markPreviewDirty();
-    });
-    showTargetToggle.addEventListener('change', () => renderer.setShowTarget(showTargetToggle.checked));
-    autoPlayToggle.addEventListener('change', () => renderer.setContinuous(autoPlayToggle.checked));
+});
 
-    exportGifBtn.addEventListener('click', exportGif);
-    copyConfigBtn.addEventListener('click', copyConfigJson);
-    presetSearch.addEventListener('input', filterPresets);
+generateButton.addEventListener('click', () => generateRecipe());
+newSeedButton.addEventListener('click', () => generateRecipe({ freshSeed: true }));
+replayButton.addEventListener('click', resetPlayback);
+pauseButton.addEventListener('click', () => {
+    if (playing) {
+        frozenTime = Math.min((performance.now() - startedAt) / 1000, activeEffect.duration);
+        playing = false;
+        pauseButton.textContent = 'Play';
+        pauseButton.setAttribute('aria-pressed', 'true');
+    } else {
+        startedAt = performance.now() - frozenTime * 1000;
+        playing = true;
+        pauseButton.textContent = 'Pause';
+        pauseButton.setAttribute('aria-pressed', 'false');
+    }
+});
 
-    blendModeSelect.addEventListener('change', () => {
-        activeConfig.visuals.blendMode = blendModeSelect.value;
-        renderer.setBlendMode(blendModeSelect.value);
-        renderer.markPreviewDirty();
-    });
+seedInput.addEventListener('change', () => generateRecipe());
+document.querySelectorAll('[data-tuning]').forEach((input) => input.addEventListener('input', () => updateTuning(input)));
+document.querySelector('#exportAtlasBtn').addEventListener('click', exportAtlas);
+document.querySelector('#exportFramesBtn').addEventListener('click', exportFramesZip);
+document.querySelector('#exportGifBtn').addEventListener('click', exportGif);
 
-    const syncPlaybackSpeed = (value) => {
-        const clamped = Math.min(3.0, Math.max(0.1, Number(value) || 1));
-        playbackSpeedRange.value = clamped;
-        playbackSpeedNumber.value = clamped;
-        renderer.setTimeScale(clamped);
-    };
-    playbackSpeedRange.addEventListener('input', () => syncPlaybackSpeed(playbackSpeedRange.value));
-    playbackSpeedNumber.addEventListener('input', () => syncPlaybackSpeed(playbackSpeedNumber.value));
-};
-
-populatePresets();
-bindControlRows();
-bindSimpleInputs();
-bindActions();
-bindCanvasDrag();
-syncUiFromConfig();
-updateRecordButtonLabel();
-updateCanvasMetadata();
-emitter.burst(activeConfig.emission.burstAmount);
-renderer.start();
+const initialRecipe = createEffectRecipe({ family: 'burst', element: 'fire', power: 'standard', seed: 734211 });
+applyRecipe(initialRecipe);
+requestAnimationFrame(animationLoop);
