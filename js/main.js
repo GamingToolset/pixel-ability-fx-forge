@@ -6,7 +6,7 @@ import {
     createEffectRecipe,
     randomSeed,
     renderEffectFrames
-} from './AbilityEffect.js?v=3';
+} from './AbilityEffect.js?v=8';
 
 const canvas = document.querySelector('#fxCanvas');
 const context = canvas.getContext('2d');
@@ -20,19 +20,19 @@ const generateButton = document.querySelector('#generateBtn');
 const newSeedButton = document.querySelector('#newSeedBtn');
 const replayButton = document.querySelector('#replayBtn');
 const pauseButton = document.querySelector('#pauseBtn');
-const showTargetToggle = document.querySelector('#showTargetToggle');
-const showOriginToggle = document.querySelector('#showOriginToggle');
-const autoReplayToggle = document.querySelector('#autoReplayToggle');
-const exportTargetToggle = document.querySelector('#exportTargetToggle');
 const recipeName = document.querySelector('#recipeName');
 const recipeFamily = document.querySelector('#recipeFamily');
 const recipeElement = document.querySelector('#recipeElement');
 const recipeDescription = document.querySelector('#recipeDescription');
 const durationStat = document.querySelector('#durationStat');
 const particleStat = document.querySelector('#particleStat');
-const ringStat = document.querySelector('#ringStat');
+const layerStat = document.querySelector('#layerStat');
 const symmetryStat = document.querySelector('#symmetryStat');
-const motifStat = document.querySelector('#motifStat');
+const formationStat = document.querySelector('#formationStat');
+const geometryStat = document.querySelector('#geometryStat');
+const traceStat = document.querySelector('#traceStat');
+const particleStyleStat = document.querySelector('#particleStyleStat');
+const flowStat = document.querySelector('#flowStat');
 const paletteSwatches = document.querySelector('#paletteSwatches');
 const frameProgress = document.querySelector('#frameProgress');
 const stageLabel = document.querySelector('#stageLabel');
@@ -49,14 +49,11 @@ let startedAt = performance.now();
 let frozenTime = 0;
 let playing = true;
 let noticeTimer;
+let seedInputTimer;
 
 const populateSelect = (select, entries, randomLabel) => {
-    select.replaceChildren();
-    const randomOption = new Option(randomLabel, 'random');
-    select.append(randomOption);
-    Object.entries(entries).forEach(([key, item]) => {
-        select.append(new Option(item.label, key));
-    });
+    select.replaceChildren(new Option(randomLabel, 'random'));
+    Object.entries(entries).forEach(([key, item]) => select.append(new Option(item.label, key)));
 };
 
 populateSelect(familySelect, EFFECT_FAMILIES, 'Surprise me');
@@ -98,32 +95,32 @@ const canvasToBlob = (sourceCanvas) => new Promise((resolve, reject) => {
 const currentExportOptions = () => ({
     size: Number(canvasSizeSelect.value),
     frameCount: Number(frameCountSelect.value),
-    fps: Number(fpsSelect.value),
-    options: {
-        showTarget: exportTargetToggle.checked,
-        showOrigin: false
-    }
+    fps: Number(fpsSelect.value)
 });
-
-const updateFamilyCards = () => {
-    document.querySelectorAll('[data-family-card]').forEach((card) => {
-        const selected = card.dataset.familyCard === familySelect.value
-            || (familySelect.value === 'random' && card.dataset.familyCard === baseRecipe.family);
-        card.classList.toggle('selected', selected);
-        card.setAttribute('aria-pressed', selected ? 'true' : 'false');
-    });
-};
 
 const updateRecipeReadout = () => {
     recipeName.textContent = baseRecipe.name;
     recipeFamily.textContent = EFFECT_FAMILIES[baseRecipe.family].shortLabel;
     recipeElement.textContent = ELEMENTS[baseRecipe.element].label;
-    recipeDescription.textContent = baseRecipe.description;
+    const hybridDescription = baseRecipe.hybrid
+        ? ` It blends ${baseRecipe.formationLabel.toLowerCase()} with ${baseRecipe.secondaryFormationLabel.toLowerCase()}.`
+        : ` This seed uses a ${baseRecipe.formationLabel.toLowerCase()} composition.`;
+    recipeDescription.textContent = `${baseRecipe.description}${hybridDescription}`;
     durationStat.textContent = `${activeEffect.duration.toFixed(1)}s`;
     particleStat.textContent = activeEffect.particleCount;
-    ringStat.textContent = baseRecipe.rings;
+    layerStat.textContent = baseRecipe.layers;
     symmetryStat.textContent = `${baseRecipe.symmetry}-way`;
-    motifStat.textContent = baseRecipe.motif.replace(/-/g, ' ');
+    formationStat.textContent = baseRecipe.hybrid
+        ? `${baseRecipe.formationLabel} + ${baseRecipe.secondaryFormationLabel}`
+        : baseRecipe.formationLabel;
+    geometryStat.textContent = baseRecipe.hybrid
+        ? `${baseRecipe.geometry} / ${baseRecipe.secondaryGeometry}`.replace(/-/g, ' ')
+        : baseRecipe.geometry.replace(/-/g, ' ');
+    traceStat.textContent = baseRecipe.hybrid
+        ? `${baseRecipe.traceStyle} / ${baseRecipe.secondaryTraceStyle}`
+        : baseRecipe.traceStyle;
+    particleStyleStat.textContent = baseRecipe.particleKit;
+    flowStat.textContent = `${baseRecipe.flow} · ${baseRecipe.temporalStyle}`.replace(/-/g, ' ');
     paletteSwatches.replaceChildren();
     baseRecipe.palette.forEach((color, index) => {
         const swatch = document.createElement('span');
@@ -135,7 +132,6 @@ const updateRecipeReadout = () => {
     document.documentElement.style.setProperty('--effect-accent', baseRecipe.palette[1]);
     document.documentElement.style.setProperty('--effect-deep', baseRecipe.palette[3]);
     seedInput.value = baseRecipe.seed;
-    updateFamilyCards();
 };
 
 const resetPlayback = () => {
@@ -146,15 +142,15 @@ const resetPlayback = () => {
     pauseButton.setAttribute('aria-pressed', 'false');
 };
 
-const applyRecipe = (recipe, { restart = true } = {}) => {
+const applyRecipe = (recipe) => {
     baseRecipe = structuredClone(recipe);
     activeEffect = new AbilityEffect(baseRecipe);
     updateRecipeReadout();
-    if (restart) resetPlayback();
+    resetPlayback();
 };
 
-const generateRecipe = ({ freshSeed = false } = {}) => {
-    const seed = freshSeed ? randomSeed() : Number(seedInput.value) || randomSeed();
+const generateRecipe = ({ useTypedSeed = false } = {}) => {
+    const seed = useTypedSeed ? Number(seedInput.value) || randomSeed() : randomSeed();
     const recipe = createEffectRecipe({
         family: familySelect.value,
         element: elementSelect.value,
@@ -163,7 +159,7 @@ const generateRecipe = ({ freshSeed = false } = {}) => {
     });
     applyRecipe(recipe);
     atlasPreviewShell.hidden = true;
-    setNotice(`Generated ${recipe.name}`, 'success');
+    setNotice(`Generated ${recipe.name} · ${recipe.formationLabel}`, 'success');
 };
 
 const playbackTime = (now) => playing ? (now - startedAt) / 1000 : frozenTime;
@@ -171,45 +167,23 @@ const playbackTime = (now) => playing ? (now - startedAt) / 1000 : frozenTime;
 const getStage = (time) => {
     const progress = time / activeEffect.duration;
     if (time < 0.25) return 'Core flash';
-    if (progress < 0.26) return 'Primary form';
+    if (progress < 0.28) return 'Primary form';
     if (progress < 0.78) return baseRecipe.family === 'burst' ? 'Aftershock' : 'Sustain';
     return 'Release';
 };
 
 const animationLoop = (now) => {
     let time = playbackTime(now);
-    const hold = 0.72;
-
-    if (playing && time > activeEffect.duration + hold) {
-        if (autoReplayToggle.checked) {
-            startedAt = now;
-            time = 0;
-        } else {
-            frozenTime = activeEffect.duration;
-            playing = false;
-            pauseButton.textContent = 'Play';
-        }
+    if (playing && time > activeEffect.duration + 0.58) {
+        startedAt = now;
+        time = 0;
     }
 
-    activeEffect.draw(context, Math.min(time, activeEffect.duration), {
-        showTarget: showTargetToggle.checked,
-        showOrigin: showOriginToggle.checked
-    });
-
-    const progress = clamp(time / activeEffect.duration, 0, 1);
+    activeEffect.draw(context, Math.min(time, activeEffect.duration));
+    const progress = Math.max(0, Math.min(1, time / activeEffect.duration));
     frameProgress.style.width = `${progress * 100}%`;
     stageLabel.textContent = `${getStage(Math.min(time, activeEffect.duration))} · ${Math.min(time, activeEffect.duration).toFixed(1)}s`;
     requestAnimationFrame(animationLoop);
-};
-
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-
-const updateTuning = (input) => {
-    const key = input.dataset.tuning;
-    const value = Number(input.value);
-    baseRecipe.tuning[key] = value;
-    input.closest('.tuning-row').querySelector('output').value = `${value.toFixed(2)}×`;
-    applyRecipe(baseRecipe);
 };
 
 const createAtlas = (frames, size) => {
@@ -232,8 +206,7 @@ const captureFrames = async () => {
     const result = await renderEffectFrames({
         recipe: baseRecipe,
         size: settings.size,
-        frameCount: settings.frameCount,
-        options: settings.options
+        frameCount: settings.frameCount
     });
     return { ...result, ...settings };
 };
@@ -265,8 +238,7 @@ const exportFramesZip = async () => {
         const { frames } = await captureFrames();
         const zip = new JSZip();
         for (let index = 0; index < frames.length; index += 1) {
-            const blob = await canvasToBlob(frames[index]);
-            zip.file(`frame-${String(index).padStart(3, '0')}.png`, blob);
+            zip.file(`frame-${String(index).padStart(3, '0')}.png`, await canvasToBlob(frames[index]));
         }
         zip.file('recipe.json', JSON.stringify(baseRecipe, null, 2));
         const blob = await zip.generateAsync({ type: 'blob' });
@@ -309,15 +281,16 @@ const exportGif = async () => {
     }
 };
 
-document.querySelectorAll('[data-family-card]').forEach((card) => {
-    card.addEventListener('click', () => {
-        familySelect.value = card.dataset.familyCard;
-        generateRecipe({ freshSeed: true });
-    });
-});
-
 generateButton.addEventListener('click', () => generateRecipe());
-newSeedButton.addEventListener('click', () => generateRecipe({ freshSeed: true }));
+newSeedButton.addEventListener('click', () => generateRecipe());
+seedInput.addEventListener('change', () => generateRecipe({ useTypedSeed: true }));
+seedInput.addEventListener('input', () => {
+    window.clearTimeout(seedInputTimer);
+    seedInputTimer = window.setTimeout(() => generateRecipe({ useTypedSeed: true }), 240);
+});
+seedInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') generateRecipe({ useTypedSeed: true });
+});
 replayButton.addEventListener('click', resetPlayback);
 pauseButton.addEventListener('click', () => {
     if (playing) {
@@ -333,12 +306,9 @@ pauseButton.addEventListener('click', () => {
     }
 });
 
-seedInput.addEventListener('change', () => generateRecipe());
-document.querySelectorAll('[data-tuning]').forEach((input) => input.addEventListener('input', () => updateTuning(input)));
 document.querySelector('#exportAtlasBtn').addEventListener('click', exportAtlas);
 document.querySelector('#exportFramesBtn').addEventListener('click', exportFramesZip);
 document.querySelector('#exportGifBtn').addEventListener('click', exportGif);
 
-const initialRecipe = createEffectRecipe({ family: 'burst', element: 'fire', power: 'standard', seed: 734211 });
-applyRecipe(initialRecipe);
+applyRecipe(createEffectRecipe({ family: 'burst', element: 'fire', power: 'standard', seed: 734211 }));
 requestAnimationFrame(animationLoop);

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#090a0e">
     <title>Ability FX Forge</title>
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
     <main class="app-shell">
@@ -37,27 +37,20 @@
                     <button id="newSeedBtn" class="icon-button" type="button" title="Generate with a fresh seed" aria-label="Generate with a fresh seed">↻</button>
                 </div>
 
-                <button id="generateBtn" class="button primary" type="button">Generate variant</button>
+                <button id="generateBtn" class="button primary" type="button">Generate unique effect</button>
             </section>
 
-            <section class="tool-card archetype-card">
+            <section class="tool-card seed-card">
                 <div class="section-heading">
-                    <span>Composition</span>
+                    <span>Seed variation</span>
                     <span class="step-index">02</span>
                 </div>
-                <div class="archetype-grid">
-                    <button class="archetype-button" data-family-card="burst" type="button" aria-pressed="false">
-                        <span class="archetype-icon burst-icon" aria-hidden="true"></span>
-                        <span><strong>Impact</strong><small>Flash · rings · debris</small></span>
-                    </button>
-                    <button class="archetype-button" data-family-card="barrier" type="button" aria-pressed="false">
-                        <span class="archetype-icon barrier-icon" aria-hidden="true"></span>
-                        <span><strong>Barrier</strong><small>Anchors · runes · orbit</small></span>
-                    </button>
-                    <button class="archetype-button" data-family-card="aura" type="button" aria-pressed="false">
-                        <span class="archetype-icon aura-icon" aria-hidden="true"></span>
-                        <span><strong>Aura</strong><small>Bloom · glyph · rise</small></span>
-                    </button>
+                <p class="seed-copy">Every seed independently changes the formation, geometry, flow, trace, particle kit, layer count, timing and asymmetry.</p>
+                <div class="seed-dimensions" aria-hidden="true">
+                    <span>16 formations / type</span>
+                    <span>25 geometries</span>
+                    <span>11 trace styles</span>
+                    <span>14 particle kits</span>
                 </div>
             </section>
 
@@ -70,18 +63,7 @@
                     <button id="replayBtn" class="button compact" type="button">Cast again</button>
                     <button id="pauseBtn" class="button compact ghost" type="button" aria-pressed="false">Pause</button>
                 </div>
-                <label class="checkbox-row" for="autoReplayToggle">
-                    <input id="autoReplayToggle" type="checkbox" checked>
-                    <span>Auto replay cast</span>
-                </label>
-                <label class="checkbox-row" for="showTargetToggle">
-                    <input id="showTargetToggle" type="checkbox" checked>
-                    <span>Show target silhouette</span>
-                </label>
-                <label class="checkbox-row" for="showOriginToggle">
-                    <input id="showOriginToggle" type="checkbox">
-                    <span>Show cast origin</span>
-                </label>
+                <p class="preview-note">Auto replay is always active. Pause only when you want to inspect a specific frame.</p>
             </section>
         </aside>
 
@@ -115,7 +97,7 @@
 
             <footer class="viewport-footer">
                 <span>Internal: 160×160</span>
-                <span>Hard pixels · staged motion</span>
+                <span>Centered · edge-safe</span>
             </footer>
         </section>
 
@@ -136,32 +118,14 @@
                 <dl class="stat-grid">
                     <div><dt>Duration</dt><dd id="durationStat">2.8s</dd></div>
                     <div><dt>Particles</dt><dd id="particleStat">140</dd></div>
-                    <div><dt>Rings</dt><dd id="ringStat">2</dd></div>
+                    <div><dt>Layers</dt><dd id="layerStat">2</dd></div>
                     <div><dt>Symmetry</dt><dd id="symmetryStat">6-way</dd></div>
-                    <div class="wide"><dt>Core motif</dt><dd id="motifStat">flare</dd></div>
+                    <div class="wide"><dt>Formation</dt><dd id="formationStat">Radial bloom</dd></div>
+                    <div><dt>Geometry</dt><dd id="geometryStat">circle</dd></div>
+                    <div><dt>Trace</dt><dd id="traceStat">pixels</dd></div>
+                    <div><dt>Particle kit</dt><dd id="particleStyleStat">embers</dd></div>
+                    <div><dt>Flow</dt><dd id="flowStat">outward</dd></div>
                 </dl>
-            </section>
-
-            <section class="inspector-section">
-                <div class="section-heading"><span>Art direction</span></div>
-                <div class="tuning-stack">
-                    <label class="tuning-row">
-                        <span>Density</span><output>1.00×</output>
-                        <input type="range" data-tuning="density" min="0.55" max="1.45" value="1" step="0.05">
-                    </label>
-                    <label class="tuning-row">
-                        <span>Scale</span><output>1.00×</output>
-                        <input type="range" data-tuning="scale" min="0.72" max="1.28" value="1" step="0.04">
-                    </label>
-                    <label class="tuning-row">
-                        <span>Motion tempo</span><output>1.00×</output>
-                        <input type="range" data-tuning="tempo" min="0.7" max="1.35" value="1" step="0.05">
-                    </label>
-                    <label class="tuning-row">
-                        <span>Cast length</span><output>1.00×</output>
-                        <input type="range" data-tuning="duration" min="0.72" max="1.35" value="1" step="0.05">
-                    </label>
-                </div>
             </section>
 
             <section class="inspector-section export-section">
@@ -190,10 +154,6 @@
                         </select>
                     </label>
                 </div>
-                <label class="checkbox-row export-target" for="exportTargetToggle">
-                    <input id="exportTargetToggle" type="checkbox">
-                    <span>Include target in exports</span>
-                </label>
                 <button id="exportAtlasBtn" class="button primary" type="button">Export sprite atlas</button>
                 <div class="button-pair">
                     <button id="exportFramesBtn" class="button compact" type="button">PNG sequence</button>
@@ -207,6 +167,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
-    <script type="module" src="js/main.js?v=3"></script>
+    <script type="module" src="js/main.js?v=9"></script>
 </body>
 </html>

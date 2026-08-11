@@ -42,8 +42,7 @@ select { font: inherit; }
 
 button,
 select,
-input[type="range"],
-input[type="checkbox"] { cursor: pointer; }
+input[type="range"] { cursor: pointer; }
 
 .app-shell {
     display: grid;
@@ -221,119 +220,36 @@ p {
     grid-template-columns: 1fr 1fr;
 }
 
-.archetype-grid {
-    display: grid;
-    gap: 7px;
-}
-
-.archetype-button {
-    align-items: center;
-    background: #0a0c11;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    color: var(--text);
-    display: grid;
-    gap: 10px;
-    grid-template-columns: 33px 1fr;
-    padding: 9px;
-    text-align: left;
-    transition: background 130ms ease, border-color 130ms ease;
-}
-
-.archetype-button:hover,
-.archetype-button.selected {
-    background: rgb(85 223 248 / 0.075);
-    border-color: var(--effect-accent);
-}
-
-.archetype-button strong,
-.archetype-button small { display: block; }
-
-.archetype-button strong {
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    margin-bottom: 2px;
-}
-
-.archetype-button small {
+.seed-copy,
+.preview-note {
     color: var(--muted);
+    font-family: var(--mono);
+    font-size: 9px;
+    line-height: 1.6;
+}
+
+.seed-dimensions {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 12px;
+}
+
+.seed-dimensions span {
+    background: #090b10;
+    border: 1px solid var(--line);
+    color: var(--quiet);
     font-family: var(--mono);
     font-size: 8px;
     letter-spacing: 0.03em;
+    padding: 7px;
+    text-transform: uppercase;
 }
 
-.archetype-icon {
-    display: block;
-    height: 28px;
-    position: relative;
-    width: 28px;
-}
-
-.archetype-icon::before,
-.archetype-icon::after {
-    content: "";
-    left: 50%;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.burst-icon::before {
-    background: var(--effect-accent);
-    box-shadow: -10px 0 0 -2px var(--effect-deep), 10px 0 0 -2px var(--effect-deep), 0 -10px 0 -2px var(--effect-deep), 0 10px 0 -2px var(--effect-deep);
-    height: 7px;
-    width: 7px;
-}
-
-.burst-icon::after {
-    border: 2px dotted var(--effect-accent);
-    border-radius: 50%;
-    height: 24px;
-    width: 24px;
-}
-
-.barrier-icon::before {
-    border: 2px dotted var(--effect-accent);
-    border-radius: 50%;
-    height: 23px;
-    width: 23px;
-}
-
-.barrier-icon::after {
-    border: 2px solid var(--effect-deep);
-    height: 7px;
-    transform: translate(-50%, -50%) rotate(45deg);
-    width: 7px;
-}
-
-.aura-icon::before {
-    background: var(--effect-accent);
-    box-shadow: 0 0 9px var(--effect-accent);
-    height: 5px;
-    width: 19px;
-}
-
-.aura-icon::after {
-    background: var(--effect-accent);
-    box-shadow: 0 0 9px var(--effect-accent);
-    height: 19px;
-    width: 5px;
-}
-
-.checkbox-row {
-    align-items: center;
-    color: #b5beca;
-    display: flex;
-    font-size: 11px;
-    gap: 9px;
-    margin-top: 10px;
-}
-
-.checkbox-row input {
-    accent-color: var(--effect-accent);
-    height: 14px;
-    margin: 0;
-    width: 14px;
+.preview-note {
+    border-left: 2px solid var(--effect-accent);
+    margin-top: 11px;
+    padding-left: 9px;
 }
 
 .viewport-panel {
@@ -582,53 +498,6 @@ canvas {
     text-transform: capitalize;
 }
 
-.tuning-stack {
-    display: grid;
-    gap: 13px;
-}
-
-.tuning-row {
-    color: var(--muted);
-    display: grid;
-    font-family: var(--mono);
-    font-size: 9px;
-    gap: 7px;
-    grid-template-columns: 1fr auto;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.tuning-row output { color: var(--effect-accent); }
-
-.tuning-row input {
-    appearance: none;
-    background: #1b2029;
-    border-radius: 99px;
-    grid-column: 1 / -1;
-    height: 5px;
-    outline: none;
-    width: 100%;
-}
-
-.tuning-row input::-webkit-slider-thumb {
-    appearance: none;
-    background: var(--effect-accent);
-    border: 2px solid #ffffff;
-    border-radius: 50%;
-    box-shadow: 0 0 9px color-mix(in srgb, var(--effect-accent) 65%, transparent);
-    height: 14px;
-    width: 14px;
-}
-
-.tuning-row input::-moz-range-thumb {
-    background: var(--effect-accent);
-    border: 2px solid #ffffff;
-    border-radius: 50%;
-    box-shadow: 0 0 9px color-mix(in srgb, var(--effect-accent) 65%, transparent);
-    height: 11px;
-    width: 11px;
-}
-
 .export-grid {
     display: grid;
     gap: 8px;
@@ -641,8 +510,6 @@ canvas {
 
 .export-grid .field-label:first-child { grid-column: 1 / -1; }
 .export-grid select { margin-top: 6px; }
-.export-target { margin-bottom: 3px; }
-
 .notice {
     background: #141922;
     border: 1px solid var(--line-bright);
@@ -685,4 +552,3 @@ canvas {
     .timeline,
     .stage-notes { max-width: 420px; }
 }
-
