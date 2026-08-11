@@ -8,6 +8,8 @@ import {
     renderEffectFrames
 } from './AbilityEffect.js?v=8';
 
+const GIF_WORKER_URL = new URL('./gif.worker.js', import.meta.url).href;
+
 const canvas = document.querySelector('#fxCanvas');
 const context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
@@ -262,9 +264,9 @@ const exportGif = async () => {
         setNotice('Encoding GIF…');
         const gif = new GIF({
             workers: 2,
-            quality: 1,
+            quality: 10,
             repeat: 0,
-            workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+            workerScript: GIF_WORKER_URL
         });
         frames.forEach((frame) => gif.addFrame(frame, { copy: true, delay: Math.round(1000 / fps) }));
         gif.on('finished', (blob) => {
