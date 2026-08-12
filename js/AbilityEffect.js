@@ -191,6 +191,23 @@ export const FORMATIONS = {
 };
 
 export const TRACE_STYLES = ['pixels', 'dashes', 'shards', 'clusters', 'sparks', 'chain', 'streaks', 'paired', 'checker', 'spray', 'beads'];
+export const PARTICLE_SHAPES = {
+    square: 'Square',
+    circle: 'Circle',
+    diamond: 'Diamond',
+    cross: 'Cross',
+    plus: 'Plus',
+    spark: 'Spark',
+    triangle: 'Triangle',
+    star: 'Star',
+    ring: 'Ring',
+    hexagon: 'Hexagon',
+    heart: 'Heart',
+    shard: 'Shard',
+    streak: 'Streak',
+    chevron: 'Chevron',
+    cluster: 'Cluster'
+};
 export const PARTICLE_KITS = {
     embers: ['square', 'cluster', 'spark'],
     shards: ['shard', 'diamond', 'streak'],
@@ -205,7 +222,11 @@ export const PARTICLE_KITS = {
     droplets: ['pebble', 'streak', 'circle'],
     petals: ['chevron', 'diamond', 'circle'],
     bolts: ['streak', 'spark', 'chevron'],
-    bubbles: ['circle', 'pebble', 'square']
+    bubbles: ['circle', 'pebble', 'ring'],
+    runes: ['ring', 'cross', 'triangle'],
+    celestial: ['star', 'ring', 'spark'],
+    sigils: ['hexagon', 'triangle', 'diamond'],
+    charms: ['heart', 'star', 'circle']
 };
 const GLOW_STYLES = ['square', 'diamond', 'bands', 'soft', 'wedges', 'halo', 'none'];
 export const TEMPORAL_STYLES = ['instant', 'staggered', 'double-pulse', 'slow-build', 'echo'];
@@ -333,6 +354,8 @@ const shapeExtent = (size, shape = 'square') => {
     const half = Math.ceil(pixelSize / 2);
     if (shape === 'cluster') return Math.max(2, Math.ceil(pixelSize * 0.72) + 1);
     if (shape === 'streak') return half + 2;
+    if (shape === 'heart') return Math.max(4, Math.ceil(7 * Math.max(1, Math.ceil(pixelSize / 5)) / 2) + 1);
+    if (shape === 'star' || shape === 'ring') return half + 2;
     return half + 1;
 };
 
@@ -358,11 +381,66 @@ const drawShape = (context, x, y, size, shape) => {
                 context.fillRect(px - offset, py + offset, 1, 1);
             }
             break;
+        case 'plus':
+            context.fillRect(px - half, py, pixelSize, 1);
+            context.fillRect(px, py - half, 1, pixelSize);
+            break;
         case 'spark':
             context.fillRect(px - half, py, pixelSize, 1);
             context.fillRect(px, py - half, 1, pixelSize);
             if (pixelSize >= 5) context.fillRect(px - 1, py - 1, 3, 3);
             break;
+        case 'star':
+            context.fillRect(px - half, py, pixelSize, 1);
+            context.fillRect(px, py - half, 1, pixelSize);
+            for (let offset = 1; offset <= Math.max(1, half - 1); offset += 1) {
+                context.fillRect(px + offset, py + offset, 1, 1);
+                context.fillRect(px - offset, py + offset, 1, 1);
+                context.fillRect(px + offset, py - offset, 1, 1);
+                context.fillRect(px - offset, py - offset, 1, 1);
+            }
+            break;
+        case 'triangle':
+            for (let row = 0; row < pixelSize; row += 1) {
+                const width = Math.max(1, Math.round(1 + row / Math.max(1, pixelSize - 1) * (pixelSize - 1)));
+                context.fillRect(px - Math.floor(width / 2), py - half + row, width, 1);
+            }
+            break;
+        case 'hexagon': {
+            const shoulder = Math.max(1, Math.floor(pixelSize / 3));
+            for (let row = -half; row <= half; row += 1) {
+                const inset = Math.max(0, Math.abs(row) - Math.max(0, half - shoulder));
+                const width = Math.max(1, pixelSize - inset * 2);
+                context.fillRect(px - Math.floor(width / 2), py + row, width, 1);
+            }
+            break;
+        }
+        case 'ring': {
+            const outer = Math.max(2, half);
+            for (let row = -outer; row <= outer; row += 1) {
+                const outerChord = Math.floor(Math.sqrt(Math.max(0, outer * outer - row * row)));
+                const inner = outer - 1;
+                if (inner > 0 && Math.abs(row) <= inner) {
+                    const innerChord = Math.floor(Math.sqrt(Math.max(0, inner * inner - row * row)));
+                    const edgeWidth = Math.max(1, outerChord - innerChord);
+                    context.fillRect(px - outerChord, py + row, edgeWidth, 1);
+                    context.fillRect(px + innerChord + 1, py + row, edgeWidth, 1);
+                } else {
+                    context.fillRect(px - outerChord, py + row, Math.max(1, outerChord * 2 + 1), 1);
+                }
+            }
+            break;
+        }
+        case 'heart': {
+            const scale = Math.max(1, Math.ceil(pixelSize / 5));
+            const pattern = ['01010', '11111', '11111', '01110', '00100'];
+            pattern.forEach((row, rowIndex) => {
+                [...row].forEach((cell, columnIndex) => {
+                    if (cell === '1') context.fillRect(px + (columnIndex - 2) * scale, py + (rowIndex - 2) * scale, scale, scale);
+                });
+            });
+            break;
+        }
         case 'cluster': {
             const block = Math.max(1, Math.round(pixelSize / 3));
             context.fillRect(px - block, py - block, block * 2, block * 2);

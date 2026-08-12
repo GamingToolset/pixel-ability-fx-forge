@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08090d">
+    <title>Pixel FX Forge — Pixel Ability Effect Generator</title>
+    <meta name="description" content="Design, tune and export game-ready pixel spell effects directly in your browser.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topbar">
+        <a class="identity" href="../index.html" aria-label="Open Pixel FX Forge">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span>
+                <strong>Pixel Ability FX Forge</strong>
+                <small>Ability effect generator</small>
+            </span>
+        </a>
+        <div class="status-line" aria-label="Project status">
+            <span class="status-dot" aria-hidden="true"></span>
+            Open source / Browser based
+        </div>
+        <a class="top-link" href="https://github.com/GamingToolset" target="_blank" rel="noreferrer">
+            GamingToolset <span aria-hidden="true">↗</span>
+        </a>
+    </header>
+
+    <main class="landing-shell">
+        <section class="hero" aria-labelledby="hero-title">
+            <div class="eyebrow"><span>01</span> Cast. Tune. Export.</div>
+            <h1 id="hero-title">Forge pixel magic<br><em>frame by frame.</em></h1>
+            <p class="hero-copy">
+                Build readable spell effects for games without drawing every frame by hand. Pick an archetype, palette, formation and particle shape—then export production-ready sprites.
+            </p>
+
+            <div class="feature-grid" aria-label="Main features">
+                <article>
+                    <span class="feature-index">A</span>
+                    <div><strong>Generate</strong><small>Seeded variations</small></div>
+                </article>
+                <article>
+                    <span class="feature-index">B</span>
+                    <div><strong>Direct</strong><small>Shape &amp; motion controls</small></div>
+                </article>
+                <article>
+                    <span class="feature-index">C</span>
+                    <div><strong>Export</strong><small>Atlas / PNG / GIF</small></div>
+                </article>
+            </div>
+
+            <div class="actions">
+                <a class="button primary" href="https://gamingtoolset.github.io/pixel-ability-fx-forge/">Launch the forge <span aria-hidden="true">→</span></a>
+                <a class="button secondary" href="https://github.com/GamingToolset/pixel-ability-fx-forge" target="_blank" rel="noreferrer">View source</a>
+            </div>
+
+            <div class="proof" aria-label="Export details">
+                <span><b>160 × 160</b> internal canvas</span>
+                <span><b>24–48</b> frames</span>
+                <span><b>100%</b> transparent</span>
+            </div>
+        </section>
+
+        <section class="showcase" aria-labelledby="showcase-title">
+            <div class="showcase-heading">
+                <div>
+                    <span class="section-kicker">Live samples</span>
+                    <h2 id="showcase-title">Two casts. Endless seeds.</h2>
+                </div>
+                <span class="live-badge"><i aria-hidden="true"></i> Rendering</span>
+            </div>
+
+            <div class="demo-grid">
+                <article class="demo-card impact-card">
+                    <div class="demo-meta">
+                        <span><b>01</b> Impact</span>
+                        <span>Arcane</span>
+                    </div>
+                    <div class="canvas-shell">
+                        <canvas id="impactFx" width="160" height="160" aria-label="Animated arcane impact pixel effect"></canvas>
+                        <span class="corner top-left" aria-hidden="true"></span>
+                        <span class="corner bottom-right" aria-hidden="true"></span>
+                    </div>
+                    <div class="demo-footer">
+                        <span>Radial bloom</span>
+                        <span class="palette"><i></i><i></i><i></i></span>
+                    </div>
+                </article>
+
+                <article class="demo-card ward-card">
+                    <div class="demo-meta">
+                        <span><b>02</b> Barrier</span>
+                        <span>Frost</span>
+                    </div>
+                    <div class="canvas-shell">
+                        <canvas id="wardFx" width="160" height="160" aria-label="Animated frost barrier pixel effect"></canvas>
+                        <span class="corner top-left" aria-hidden="true"></span>
+                        <span class="corner bottom-right" aria-hidden="true"></span>
+                    </div>
+                    <div class="demo-footer">
+                        <span>Polygon ward</span>
+                        <span class="palette"><i></i><i></i><i></i></span>
+                    </div>
+                </article>
+            </div>
+
+            <p class="showcase-note"><span aria-hidden="true">+</span> Deterministic seeds make every effect reproducible and easy to iterate.</p>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

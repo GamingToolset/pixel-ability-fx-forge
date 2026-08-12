@@ -4,13 +4,14 @@ import {
     ELEMENTS,
     FORMATIONS,
     PARTICLE_KITS,
+    PARTICLE_SHAPES,
     POWER_LEVELS,
     TEMPORAL_STYLES,
     TRACE_STYLES,
     createEffectRecipe,
     randomSeed,
     renderEffectFrames
-} from './AbilityEffect.js?v=9';
+} from './AbilityEffect.js?v=10';
 
 const GIF_WORKER_URL = new URL('./gif.worker.js', import.meta.url).href;
 const GIF_TRANSPARENT_COLOR = 0x010203;
@@ -55,6 +56,8 @@ const fpsSelect = document.querySelector('#fpsSelect');
 const atlasPreview = document.querySelector('#atlasPreview');
 const atlasPreviewShell = document.querySelector('#atlasPreviewShell');
 const notice = document.querySelector('#notice');
+const particleShapePicker = document.querySelector('#particleShapePicker');
+const particleShapeValue = document.querySelector('#particleShapeValue');
 
 const allGeometries = [...new Set(Object.values(FORMATIONS)
     .flatMap((family) => Object.values(family))
@@ -75,6 +78,72 @@ const prettyLabel = (value) => String(value)
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/-/g, ' ')
     .replace(/^./, (letter) => letter.toUpperCase());
+
+const paintShapeIcon = (canvas, shape) => {
+    const icon = canvas.getContext('2d');
+    const color = getComputedStyle(document.documentElement).getPropertyValue('--effect-accent').trim() || '#ef8dff';
+    icon.clearRect(0, 0, canvas.width, canvas.height);
+    icon.fillStyle = color;
+    const cells = {
+        mixed: ['10001', '01010', '00100', '01010', '10001'],
+        square: ['11111', '11111', '11111', '11111', '11111'],
+        circle: ['01110', '11111', '11111', '11111', '01110'],
+        diamond: ['00100', '01110', '11111', '01110', '00100'],
+        cross: ['10001', '01010', '00100', '01010', '10001'],
+        plus: ['00100', '00100', '11111', '00100', '00100'],
+        spark: ['10101', '01110', '11111', '01110', '10101'],
+        triangle: ['00100', '01110', '01110', '11111', '11111'],
+        star: ['10101', '01110', '11111', '01110', '10101'],
+        ring: ['01110', '10001', '10001', '10001', '01110'],
+        hexagon: ['01110', '11111', '11111', '11111', '01110'],
+        heart: ['01010', '11111', '11111', '01110', '00100'],
+        shard: ['00100', '00110', '01110', '01100', '01000'],
+        streak: ['00100', '00100', '00100', '00100', '00000'],
+        chevron: ['10001', '01010', '00100', '00000', '00000'],
+        cluster: ['11010', '11110', '01100', '10010', '00000']
+    };
+    const pattern = cells[shape] || cells.square;
+    pattern.forEach((row, y) => [...row].forEach((cell, x) => {
+        if (cell === '1') icon.fillRect(3 + x * 3, 3 + y * 3, 3, 3);
+    }));
+};
+
+const buildParticleShapePicker = () => {
+    const entries = [['mixed', 'Mixed kit'], ...Object.entries(PARTICLE_SHAPES)];
+    entries.forEach(([key, label]) => {
+        const button = document.createElement('button');
+        const icon = document.createElement('canvas');
+        const name = document.createElement('span');
+        button.className = 'shape-option';
+        button.type = 'button';
+        button.dataset.shape = key;
+        button.setAttribute('role', 'radio');
+        button.setAttribute('aria-checked', 'false');
+        button.title = label;
+        icon.width = 21;
+        icon.height = 21;
+        icon.setAttribute('aria-hidden', 'true');
+        name.textContent = label;
+        button.append(icon, name);
+        particleShapePicker.append(button);
+        paintShapeIcon(icon, key);
+    });
+};
+
+const selectedParticleShape = () => baseRecipe?.particleShapes?.length === 1
+    ? baseRecipe.particleShapes[0]
+    : 'mixed';
+
+const syncParticleShapePicker = () => {
+    const selected = selectedParticleShape();
+    particleShapePicker.querySelectorAll('.shape-option').forEach((button) => {
+        const active = button.dataset.shape === selected;
+        button.classList.toggle('selected', active);
+        button.setAttribute('aria-checked', String(active));
+        paintShapeIcon(button.querySelector('canvas'), button.dataset.shape);
+    });
+    particleShapeValue.textContent = selected === 'mixed' ? 'Mixed kit' : PARTICLE_SHAPES[selected] || prettyLabel(selected);
+};
 
 const setSelectOptions = (select, entries, value, firstOption) => {
     select.replaceChildren();
@@ -142,6 +211,7 @@ const syncControls = () => {
     controls.temporal.value = baseRecipe.temporalStyle;
     controls.secondaryGeometry.disabled = !baseRecipe.hybrid;
     controls.secondaryTrace.disabled = !baseRecipe.hybrid;
+    syncParticleShapePicker();
 };
 
 const setNotice = (message, tone = 'default') => {
@@ -212,8 +282,8 @@ const resetPlayback = () => {
 const applyRecipe = (recipe, { showNotice = false } = {}) => {
     baseRecipe = structuredClone(recipe);
     activeEffect = new AbilityEffect(baseRecipe);
-    syncControls();
     updateRecipeReadout();
+    syncControls();
     resetPlayback();
     atlasPreviewShell.hidden = true;
     if (showNotice) setNotice('Effect updated', 'success');
@@ -417,10 +487,22 @@ const bindStructureControls = () => {
             particleShapes: [...PARTICLE_KITS[particleKit]]
         });
     });
+    particleShapePicker.addEventListener('click', (event) => {
+        const button = event.target.closest('.shape-option');
+        if (!button) return;
+        const shape = button.dataset.shape;
+        if (shape === 'mixed') {
+            const particleKit = controls.particleKit.value;
+            rebuildRecipe({ particleShapes: [...PARTICLE_KITS[particleKit]] });
+            return;
+        }
+        rebuildRecipe({ particleShapes: [shape] });
+    });
     controls.flow.addEventListener('change', () => rebuildRecipe({ flow: controls.flow.value }));
     controls.temporal.addEventListener('change', () => rebuildRecipe({ temporalStyle: controls.temporal.value }));
 };
 
+buildParticleShapePicker();
 populateStaticControls();
 bindStructureControls();
 
