@@ -9,6 +9,8 @@
 <p align="center">
   <a href="https://gamingtoolset.github.io/pixel-ability-fx-forge/"><strong>Launch the forge</strong></a>
   ·
+  <a href="https://announcerua.itch.io/pixel-ability-fx-forge">Itch.io page</a>
+  ·
   <a href="https://gamingtoolset.github.io/pixel-ability-fx-forge/website/">Project page</a>
   ·
   <a href="#quick-start">Run locally</a>
