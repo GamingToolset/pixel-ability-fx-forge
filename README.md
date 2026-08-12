@@ -169,9 +169,7 @@ pixel-ability-fx-forge/
 ├── tests/
 │   └── effect-harness.html   # Browser-based deterministic render checks
 ├── website/
-│   ├── index.html            # Optional project landing page
-│   ├── script.js             # Animated landing-page samples
-│   └── style.css             # Landing-page styles
+│   └── index.html            # Self-contained project landing page
 ├── index.html                # Main application
 └── README.md
 ```
@@ -240,13 +238,7 @@ When changing generation logic, keep seeded output deterministic, maintain the f
 
 ## License
 
-This project is distributed under the **Apache-2.0 license**.
-
-See [`LICENSE`](./LICENSE) for full legal text.
-
-## ❤️ Support the Project
-
-If you find this tool useful, consider leaving a ⭐ on GitHub
+No license file is currently included in this repository. Until one is added, standard copyright restrictions apply. If you maintain this project, add an explicit license before inviting reuse or redistribution.
 
 ---
 
