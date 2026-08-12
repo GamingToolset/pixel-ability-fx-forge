@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title description">
+  <title id="title">Pixel FX Forge repository banner</title>
+  <desc id="description">A dark pixel-art banner with the Pixel FX Forge name, project features, and an arcane spell effect.</desc>
+
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07080c"/>
+      <stop offset="0.56" stop-color="#0d1017"/>
+      <stop offset="1" stop-color="#10091b"/>
+    </linearGradient>
+    <radialGradient id="arcaneGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ef8dff" stop-opacity="0.25"/>
+      <stop offset="0.52" stop-color="#6422b8" stop-opacity="0.11"/>
+      <stop offset="1" stop-color="#6422b8" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0H0V20" fill="none" stroke="#ffffff" stroke-opacity="0.035"/>
+    </pattern>
+    <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="canvasClip">
+      <rect x="824" y="48" width="306" height="264"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="360" fill="url(#background)"/>
+  <rect width="1200" height="360" fill="url(#grid)"/>
+  <path d="M0 1H1200M0 359H1200" stroke="#3c4859" stroke-width="2"/>
+  <path d="M1 0V360M1199 0V360" stroke="#252e3b" stroke-width="2"/>
+
+  <g opacity="0.7">
+    <path d="M0 48H34V44H74" fill="none" stroke="#ef8dff" stroke-width="2"/>
+    <rect x="78" y="40" width="8" height="8" fill="#ef8dff"/>
+    <path d="M1200 318H1166V322H1126" fill="none" stroke="#69e8ff" stroke-width="2"/>
+    <rect x="1114" y="318" width="8" height="8" fill="#69e8ff"/>
+  </g>
+
+  <g transform="translate(68 52)" shape-rendering="crispEdges">
+    <rect x="8" y="0" width="16" height="8" fill="#ef8dff"/>
+    <rect x="0" y="8" width="32" height="16" fill="#ef8dff"/>
+    <rect x="8" y="24" width="16" height="8" fill="#69e8ff"/>
+    <rect x="28" y="12" width="8" height="8" fill="#fff1ff"/>
+  </g>
+
+  <text x="120" y="67" fill="#69e8ff" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" letter-spacing="3">BROWSER-BASED PIXEL VFX GENERATOR</text>
+  <rect x="68" y="103" width="34" height="4" fill="#ef8dff"/>
+  <rect x="108" y="103" width="10" height="4" fill="#6422b8"/>
+
+  <text x="66" y="174" fill="#f5f7fa" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="62" font-weight="900" letter-spacing="-4">PIXEL FX</text>
+  <text x="66" y="232" fill="#ef8dff" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="62" font-weight="900" letter-spacing="-4">FORGE</text>
+  <text x="70" y="265" fill="#8b98a8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" letter-spacing="1">Build · tune · export game-ready spell sprites</text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" letter-spacing="1.2">
+    <g transform="translate(70 291)">
+      <rect width="94" height="28" fill="#151b25" stroke="#3c4859"/>
+      <rect width="3" height="28" fill="#69e8ff"/>
+      <text x="14" y="18" fill="#c8f7ff">SEEDED</text>
+    </g>
+    <g transform="translate(174 291)">
+      <rect width="112" height="28" fill="#151b25" stroke="#3c4859"/>
+      <rect width="3" height="28" fill="#ef8dff"/>
+      <text x="14" y="18" fill="#f2d6ff">48 FORMS</text>
+    </g>
+    <g transform="translate(296 291)">
+      <rect width="166" height="28" fill="#151b25" stroke="#3c4859"/>
+      <rect width="3" height="28" fill="#7affb3"/>
+      <text x="14" y="18" fill="#dfffea">PNG · GIF · ATLAS</text>
+    </g>
+  </g>
+
+  <path d="M742 38V322" stroke="#252e3b" stroke-width="2"/>
+  <path d="M748 102V258" stroke="#ef8dff" stroke-opacity="0.2"/>
+
+  <g shape-rendering="crispEdges">
+    <rect x="806" y="32" width="342" height="296" fill="#090c12" stroke="#3c4859" stroke-width="2"/>
+    <rect x="816" y="42" width="322" height="276" fill="#08090d" stroke="#252e3b"/>
+    <path d="M816 70H1138M816 290H1138" stroke="#252e3b"/>
+    <rect x="816" y="42" width="42" height="3" fill="#ef8dff"/>
+    <rect x="1096" y="315" width="42" height="3" fill="#69e8ff"/>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="700" letter-spacing="1.2">
+    <text x="830" y="60" fill="#d7dfe8">LIVE CAST</text>
+    <circle cx="1071" cy="56" r="3" fill="#7affb3"/>
+    <text x="1081" y="60" fill="#7affb3">READY</text>
+    <text x="830" y="307" fill="#536173">160 × 160</text>
+    <text x="1047" y="307" fill="#536173">ARCANE</text>
+  </g>
+
+  <g clip-path="url(#canvasClip)">
+    <circle cx="977" cy="180" r="150" fill="url(#arcaneGlow)"/>
+    <circle cx="977" cy="180" r="62" fill="none" stroke="#6422b8" stroke-width="12" stroke-opacity="0.13" filter="url(#softGlow)"/>
+
+    <g fill="none" stroke-linejoin="miter" shape-rendering="crispEdges">
+      <path d="M977 103L1031 126L1054 180L1031 234L977 257L923 234L900 180L923 126Z" stroke="#6422b8" stroke-width="3" stroke-dasharray="14 7" opacity="0.62"/>
+      <path d="M977 122L1018 139L1035 180L1018 221L977 238L936 221L919 180L936 139Z" stroke="#ef8dff" stroke-width="4" stroke-dasharray="18 5" opacity="0.88"/>
+      <path d="M977 144L1013 180L977 216L941 180Z" stroke="#69e8ff" stroke-width="3" stroke-dasharray="10 5" opacity="0.83"/>
+      <path d="M977 130V230M927 180H1027M942 145L1012 215M1012 145L942 215" stroke="#ef8dff" stroke-width="2" stroke-dasharray="8 14" opacity="0.48"/>
+    </g>
+
+    <g filter="url(#softGlow)" shape-rendering="crispEdges">
+      <rect x="965" y="168" width="24" height="24" fill="#6422b8" opacity="0.7"/>
+      <rect x="969" y="172" width="16" height="16" fill="#ef8dff"/>
+      <rect x="973" y="176" width="8" height="8" fill="#ffffff"/>
+    </g>
+
+    <g shape-rendering="crispEdges">
+      <rect x="973" y="98" width="8" height="8" fill="#ffffff"/>
+      <rect x="1047" y="176" width="8" height="8" fill="#ef8dff"/>
+      <rect x="973" y="254" width="8" height="8" fill="#69e8ff"/>
+      <rect x="899" y="176" width="8" height="8" fill="#ef8dff"/>
+      <rect x="1026" y="122" width="6" height="6" fill="#c8f7ff"/>
+      <rect x="1026" y="232" width="6" height="6" fill="#ef8dff"/>
+      <rect x="922" y="232" width="6" height="6" fill="#69e8ff"/>
+      <rect x="922" y="122" width="6" height="6" fill="#ef8dff"/>
+      <rect x="1080" y="132" width="5" height="5" fill="#a855f7"/>
+      <rect x="866" y="216" width="5" height="5" fill="#69e8ff"/>
+      <rect x="1066" y="247" width="4" height="4" fill="#ef8dff"/>
+      <rect x="881" y="111" width="4" height="4" fill="#a855f7"/>
+      <rect x="1100" y="197" width="3" height="3" fill="#ffffff"/>
+      <rect x="851" y="157" width="3" height="3" fill="#ef8dff"/>
+    </g>
+  </g>
+</svg>
