@@ -240,7 +240,13 @@ When changing generation logic, keep seeded output deterministic, maintain the f
 
 ## License
 
-No license file is currently included in this repository. Until one is added, standard copyright restrictions apply. If you maintain this project, add an explicit license before inviting reuse or redistribution.
+This project is distributed under the **Apache-2.0 license**.
+
+See [`LICENSE`](./LICENSE) for full legal text.
+
+## ❤️ Support the Project
+
+If you find this tool useful, consider leaving a ⭐ on GitHub
 
 ---
 
