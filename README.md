@@ -15,11 +15,13 @@
 </p>
 
 <p align="center">
+  <a href="https://announcerua.itch.io/pixel-ability-fx-forge"><img alt="itch.io" src="https://img.shields.io/badge/itch.io-FA5C5C?style=for-the-badge&amp;logo=itch.io&amp;logoColor=white">
   <img alt="JavaScript ES modules" src="https://img.shields.io/badge/JavaScript-ES%20Modules-F7DF1E?style=for-the-badge&amp;logo=javascript&amp;logoColor=111111">
   <img alt="HTML5" src="https://img.shields.io/badge/HTML5-Canvas-E34F26?style=for-the-badge&amp;logo=html5&amp;logoColor=white">
   <img alt="CSS3" src="https://img.shields.io/badge/CSS3-Pixel%20UI-1572B6?style=for-the-badge&amp;logo=css3&amp;logoColor=white">
   <img alt="No build step" src="https://img.shields.io/badge/build-none-7AFFB3?style=for-the-badge">
-  <a href="https://github.com/GamingToolset/pixel-ability-fx-forge/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/GamingToolset/pixel-ability-fx-forge?style=for-the-badge&amp;logo=github&amp;color=EF8DFF"></a>
+  <a href="https://github.com/GamingToolset/pixel-ability-fx-forge/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/GamingToolset/pixel-ability-fx-forge?style=for-the-badge&amp;logo=github&amp;color=EF8DFF">
 </p>
 
 ## Overview
